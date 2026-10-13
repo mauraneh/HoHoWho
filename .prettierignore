@@ -1,0 +1,7 @@
+dist
+coverage
+.angular
+node_modules
+pnpm-lock.yaml
+supabase/.temp
+supabase/.branches

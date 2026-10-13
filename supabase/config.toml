@@ -1,0 +1,26 @@
+# Supabase CLI configuration (https://supabase.com/docs/guides/local-development/cli/config).
+# Only settings that differ from the CLI defaults are listed.
+project_id = "hohowho"
+
+[api]
+# Expose only the public schema through the REST API.
+schemas = ["public"]
+
+[db]
+major_version = 17
+
+[auth]
+# Local development URL. In production, set Site URL and Redirect URLs in the dashboard
+# (Authentication → URL Configuration) to your GitHub Pages URL.
+site_url = "http://localhost:4200"
+additional_redirect_urls = ["http://localhost:4200", "http://127.0.0.1:4200"]
+minimum_password_length = 8
+
+[auth.email]
+enable_signup = true
+# Confirmation e-mails are captured by the local Inbucket/Mailpit server during development.
+enable_confirmations = true
+
+[functions.draw-assignments]
+# The function authenticates the caller from the JWT itself (see index.ts).
+verify_jwt = true

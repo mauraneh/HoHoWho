@@ -1,0 +1,134 @@
+name: CI & Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NODE_VERSION: 24
+
+jobs:
+  frontend:
+    name: Lint, test & build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: pnpm/action-setup@v4 # version read from "packageManager" in package.json
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm test
+
+      - name: Production build
+        # Served from https://<owner>.github.io/<repo>/ unless BASE_HREF is set (e.g. "/" for a custom domain).
+        run: pnpm build --base-href "${{ vars.BASE_HREF || format('/{0}/', github.event.repository.name) }}"
+
+      - name: Write runtime config
+        if: github.event_name != 'pull_request'
+        env:
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ vars.SUPABASE_ANON_KEY || secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "::error::Set the SUPABASE_URL and SUPABASE_ANON_KEY repository variables (Settings → Secrets and variables → Actions → Variables). See README."
+            exit 1
+          fi
+          node scripts/write-runtime-config.mjs dist/hohowho/browser/config.json
+
+      - uses: actions/upload-pages-artifact@v4
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        with:
+          path: dist/hohowho/browser
+
+  database:
+    name: Migrations & RLS tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - run: scripts/test-db.sh
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
+
+  edge-functions:
+    name: Type-check Edge Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check supabase/functions/draw-assignments/index.ts
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [frontend, database, edge-functions]
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  deploy-supabase:
+    name: Deploy Supabase (optional)
+    # Runs only when SUPABASE_ACCESS_TOKEN, SUPABASE_PROJECT_REF and SUPABASE_DB_PASSWORD secrets exist.
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [database, edge-functions]
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - name: Check configuration
+        id: check
+        run: |
+          if [ -n "$SUPABASE_ACCESS_TOKEN" ] && [ -n "$SUPABASE_PROJECT_REF" ] && [ -n "$SUPABASE_DB_PASSWORD" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Supabase secrets not configured: skipping (deploy manually, see README)."
+          fi
+      - uses: actions/checkout@v5
+        if: steps.check.outputs.enabled == 'true'
+      - uses: supabase/setup-cli@v1
+        if: steps.check.outputs.enabled == 'true'
+        with:
+          version: latest
+      - name: Apply migrations and deploy functions
+        if: steps.check.outputs.enabled == 'true'
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
+          supabase db push --password "$SUPABASE_DB_PASSWORD"
+          supabase functions deploy draw-assignments --project-ref "$SUPABASE_PROJECT_REF"

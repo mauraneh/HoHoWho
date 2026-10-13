@@ -1,0 +1,25 @@
+import { BackendError } from './backend/hohowho-backend';
+import { errorMessage, formatBudget, safeReturnUrl } from './format';
+
+describe('format helpers', () => {
+  it('only allows in-app return URLs', () => {
+    expect(safeReturnUrl('/join/abc')).toBe('/join/abc');
+    expect(safeReturnUrl('//evil.example')).toBe('/events');
+    expect(safeReturnUrl('https://evil.example')).toBe('/events');
+    expect(safeReturnUrl(undefined)).toBe('/events');
+  });
+
+  it('formats budgets', () => {
+    expect(formatBudget(null, null, 'EUR')).toBe('No budget set');
+    expect(formatBudget(null, 30, 'EUR')).toContain('30');
+    expect(formatBudget(10, 30, 'EUR')).toMatch(/10.*30/);
+  });
+
+  it('only exposes messages of known errors', () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    expect(errorMessage(new BackendError('Nope'))).toBe('Nope');
+    expect(errorMessage(new Error('internal details'))).toBe(
+      'Something went wrong. Please try again.',
+    );
+  });
+});
