@@ -110,19 +110,19 @@ Confirmation e-mails sent by the local stack appear in the local mail viewer pri
 
 ## Commands
 
-| Command                                                   | Description                                                                   |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `pnpm start`                                              | Dev server with mock data                                                     |
-| `pnpm start:supabase`                                     | Dev server against Supabase (reads `.env`)                                    |
-| `pnpm build`                                              | Production build into `dist/hohowho/browser` (base href `/`)                  |
-| `pnpm build --base-href /HoHoWho/`                        | Production build for a sub-path such as GitHub Pages                          |
-| `pnpm build:dev`                                          | Unoptimised development build (mock data)                                     |
-| `pnpm config:write [file]`                                | Writes runtime `config.json` (default `public/config.json`) from env / `.env` |
-| `pnpm test`                                               | Unit tests (Vitest): draw, recommender, mock backend, config…                 |
-| `pnpm lint`                                               | ESLint (angular-eslint, template accessibility rules)                         |
-| `pnpm format` / `pnpm format:check`                       | Prettier                                                                      |
-| `DATABASE_URL=postgres://… pnpm test:db`                  | Applies migrations to a throwaway database and runs the RLS tests             |
-| `deno check supabase/functions/draw-assignments/index.ts` | Type-checks the Edge Function                                                 |
+| Command                                                                                     | Description                                                                   |
+| ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `pnpm start`                                                                                | Dev server with mock data                                                     |
+| `pnpm start:supabase`                                                                       | Dev server against Supabase (reads `.env`)                                    |
+| `pnpm build`                                                                                | Production build into `dist/hohowho/browser` (base href `/`)                  |
+| `pnpm build --base-href /HoHoWho/`                                                          | Production build for a sub-path such as GitHub Pages                          |
+| `pnpm build:dev`                                                                            | Unoptimised development build (mock data)                                     |
+| `pnpm config:write [file]`                                                                  | Writes runtime `config.json` (default `public/config.json`) from env / `.env` |
+| `pnpm test`                                                                                 | Unit tests (Vitest): draw, recommender, mock backend, config…                 |
+| `pnpm lint`                                                                                 | ESLint (angular-eslint, template accessibility rules)                         |
+| `pnpm format` / `pnpm format:check`                                                         | Prettier                                                                      |
+| `DATABASE_URL=postgres://… pnpm test:db`                                                    | Applies migrations to a throwaway database and runs the RLS tests             |
+| `deno check --node-modules-dir=none --no-lock supabase/functions/draw-assignments/index.ts` | Type-checks the Edge Function                                                 |
 
 To preview a production build locally:
 

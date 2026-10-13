@@ -87,7 +87,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno check supabase/functions/draw-assignments/index.ts
+      # The root package.json would make Deno expect a local node_modules; use Deno's own npm cache.
+      - run: deno check --node-modules-dir=none --no-lock supabase/functions/draw-assignments/index.ts
 
   deploy-pages:
     name: Deploy to GitHub Pages
