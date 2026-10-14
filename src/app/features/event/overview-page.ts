@@ -8,17 +8,18 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { MIN_PARTICIPANTS } from '@shared/draw';
 import { HohowhoBackend } from '../../core/backend/hohowho-backend';
-import { errorMessage } from '../../core/format';
-import { CreatedInvitation, Exclusion, Participant } from '../../core/models';
+import { appUrl, errorMessage, initials, mailtoLink } from '../../core/format';
+import { CreatedInvitation, EventDetail, Participant } from '../../core/models';
 import { EventStore } from './event-store';
+
+type Step = 'done' | 'current' | 'todo';
 
 @Component({
   selector: 'app-overview-page',
-  imports: [FormsModule, DatePipe],
+  imports: [DatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (store.detail(); as d) {
@@ -29,221 +30,392 @@ import { EventStore } from './event-store';
         <div class="alert alert-success" role="status">{{ n }}</div>
       }
 
-      @if (d.event.status === 'drawn') {
-        <div class="card highlight">
-          <h2>🎁 Names have been drawn!</h2>
-          <p>Find out who you are buying a gift for, with their wishlist and gift ideas.</p>
-          <button type="button" class="btn btn-primary" (click)="go('giftee')">
-            See my giftee
-          </button>
-        </div>
-      } @else if (!d.isOwner) {
-        <div class="card">
-          <h2>Waiting for the draw</h2>
-          <p class="muted">
-            The organiser will draw names once everyone has joined. Meanwhile, fill in your wishes
-            so your Secret Santa knows what you like.
-          </p>
-          <button type="button" class="btn btn-green" (click)="go('wishes')">
-            Fill in my wishes
-          </button>
-        </div>
-      }
+      <ol class="stepper card" aria-label="Progress">
+        @for (s of steps(); track s.title) {
+          <li [class]="s.state">
+            <span class="bullet">{{ s.state === 'done' ? '✓' : $index + 1 }}</span>
+            <span class="step-text">
+              <strong>{{ s.title }}</strong>
+              <span class="muted small">{{ s.detail }}</span>
+            </span>
+          </li>
+        }
+      </ol>
+
+      <!-- What the current user should do now -->
+      <section class="card cta" [class.cta-done]="ctaDone()">
+        @switch (d.event.status) {
+          @case ('open') {
+            @if (!d.me.profileCompleted) {
+              <h2>🎁 Tell your Santa what you'd love</h2>
+              <p class="muted">
+                A few clicks: your interests, the kind of gifts you like, what to avoid, and an
+                optional wishlist.
+              </p>
+              <button type="button" class="btn btn-primary" (click)="go('wishes')">
+                Fill in my wishes
+              </button>
+            } @else {
+              <h2>✓ Your wishes are saved</h2>
+              <p class="muted">
+                {{
+                  d.isOwner
+                    ? 'Close the list below once everyone has joined.'
+                    : 'Next step when the organiser closes the list: choosing exclusions.'
+                }}
+              </p>
+              <button type="button" class="btn btn-sm" (click)="go('wishes')">
+                Edit my wishes
+              </button>
+            }
+          }
+          @case ('exclusions') {
+            @if (!d.me.exclusionsConfirmed) {
+              <h2>🤫 Anyone you'd rather not give a gift to?</h2>
+              <p class="muted">
+                Pick them privately (or nobody), then validate. Nobody will see your choices.
+              </p>
+              <button type="button" class="btn btn-primary" (click)="go('exclusions')">
+                Choose my exclusions
+              </button>
+            } @else {
+              <h2>✓ You've validated your exclusions</h2>
+              <p class="muted">
+                Names are drawn automatically when everyone has validated ({{ confirmedCount() }}/{{
+                  d.participants.length
+                }}
+                so far).
+              </p>
+              <button type="button" class="btn btn-sm" (click)="go('exclusions')">
+                Change my choices
+              </button>
+            }
+          }
+          @case ('drawn') {
+            <h2>🎉 Names have been drawn!</h2>
+            <p class="muted">Discover who you're buying a gift for, their wishes and gift ideas.</p>
+            <button type="button" class="btn btn-gold btn-lg" (click)="go('giftee')">
+              Reveal my giftee
+            </button>
+          }
+        }
+      </section>
 
       <section class="card">
-        <h2>Participants</h2>
+        <div class="spread">
+          <h2>Participants</h2>
+          <span class="muted small">{{ progressLabel() }}</span>
+        </div>
+        <div class="progress" aria-hidden="true">
+          <span [style.width.%]="progressPercent()"></span>
+        </div>
         <ul class="list">
           @for (p of d.participants; track p.id) {
             <li class="spread">
-              <span>
-                {{ p.displayName }}
-                @if (p.userId === d.event.ownerId) {
-                  <span class="badge badge-red">Organiser</span>
+              <span class="person">
+                <span class="avatar" aria-hidden="true">{{ initials(p.displayName) }}</span>
+                <span>
+                  {{ p.displayName }}
+                  @if (p.userId === d.event.ownerId) {
+                    <span class="badge badge-gold">★ Organiser</span>
+                  }
+                  @if (p.id === d.me.id) {
+                    <span class="badge">You</span>
+                  }
+                </span>
+              </span>
+              <span class="row">
+                @if (d.event.status === 'open') {
+                  <span class="badge" [class.badge-green]="p.profileCompleted">
+                    {{ p.profileCompleted ? '✓ Wishes' : '… Wishes' }}
+                  </span>
+                } @else if (d.event.status === 'exclusions') {
+                  <span class="badge" [class.badge-green]="p.exclusionsConfirmed">
+                    {{ p.exclusionsConfirmed ? '✓ Validated' : '… Pending' }}
+                  </span>
                 }
-                @if (p.id === d.me.id) {
-                  <span class="badge">You</span>
+                @if (d.event.status === 'open' && d.isOwner && p.userId !== d.event.ownerId) {
+                  <button
+                    type="button"
+                    class="btn btn-sm btn-danger"
+                    [disabled]="busy()"
+                    (click)="removeParticipant(p)"
+                    [attr.aria-label]="'Remove ' + p.displayName"
+                  >
+                    ✕
+                  </button>
                 }
               </span>
-              @if (d.event.status === 'open' && d.isOwner && p.userId !== d.event.ownerId) {
-                <button
-                  type="button"
-                  class="btn btn-sm btn-danger"
-                  [disabled]="busy()"
-                  (click)="removeParticipant(p)"
-                >
-                  Remove
-                </button>
-              }
             </li>
           }
         </ul>
         @if (d.event.status === 'open' && !d.isOwner) {
           <button
             type="button"
-            class="btn btn-sm btn-danger leave"
+            class="link-btn small leave"
             [disabled]="busy()"
             (click)="leave(d.me)"
           >
-            Leave this event
+            Leave this Secret Santa
           </button>
         }
       </section>
 
-      @if (d.isOwner && d.event.status === 'open') {
-        <section class="card">
-          <h2>Invite participants</h2>
-          <p class="muted small">
-            Anyone with the link can join until it expires. For security, a link is shown only once:
-            create a new one whenever you need it.
-          </p>
-          @if (invitation(); as inv) {
-            <div class="invite">
-              <label for="invite-link" class="visually-hidden">Invitation link</label>
-              <input
-                id="invite-link"
-                readonly
-                [value]="inviteUrl(inv)"
-                (focus)="selectAll($event)"
-              />
-              <button type="button" class="btn btn-sm" (click)="copy(inviteUrl(inv))">
-                {{ copied() ? 'Copied!' : 'Copy' }}
-              </button>
-            </div>
-            <p class="muted small">Valid until {{ inv.expiresAt | date: 'medium' }}.</p>
-          }
-          <div class="row">
-            <button
-              type="button"
-              class="btn btn-green"
-              [disabled]="busy()"
-              (click)="createInvitation()"
-            >
-              Create invitation link
-            </button>
-            @if (activeInvitations() > 0) {
-              <button
-                type="button"
-                class="btn btn-danger"
-                [disabled]="busy()"
-                (click)="revokeInvitations()"
-              >
-                Revoke {{ activeInvitations() }} active link{{
-                  activeInvitations() === 1 ? '' : 's'
-                }}
-              </button>
-            }
-          </div>
-        </section>
-
-        <section class="card">
-          <h2>Exclusions</h2>
-          <p class="muted small">
-            Pairs who must not draw each other (for example partners who already exchange gifts).
-          </p>
-          @if (exclusions().length) {
-            <ul class="list">
-              @for (x of exclusions(); track x.id) {
-                <li class="spread">
-                  <span>{{ nameOf(x.participantA) }} ⇄ {{ nameOf(x.participantB) }}</span>
+      @if (d.isOwner) {
+        <section class="card organiser">
+          <span class="eyebrow eyebrow-dark">Organiser</span>
+          @switch (d.event.status) {
+            @case ('open') {
+              <h2>1 · Invite everyone</h2>
+              <p class="muted small">
+                Share this link (WhatsApp, e-mail…). People enter their e-mail and fill in their
+                wishes. For security a link is shown only once — create a new one whenever you need
+                it.
+              </p>
+              @if (invitation(); as inv) {
+                <div class="share">
+                  <label for="invite-link" class="visually-hidden">Invitation link</label>
+                  <input
+                    id="invite-link"
+                    readonly
+                    [value]="inviteUrl(inv)"
+                    (focus)="selectAll($event)"
+                  />
+                  <button type="button" class="btn btn-sm" (click)="copy(inviteUrl(inv))">
+                    {{ copied() ? 'Copied ✓' : 'Copy' }}
+                  </button>
+                </div>
+                <p class="muted small">Valid until {{ inv.expiresAt | date: 'medium' }}.</p>
+              }
+              <div class="row">
+                <button
+                  type="button"
+                  class="btn btn-green"
+                  [disabled]="busy()"
+                  (click)="createInvitation()"
+                >
+                  🔗 {{ invitation() ? 'New invitation link' : 'Create the invitation link' }}
+                </button>
+                @if (activeInvitations() > 0) {
                   <button
                     type="button"
                     class="btn btn-sm btn-danger"
                     [disabled]="busy()"
-                    (click)="removeExclusion(x)"
+                    (click)="revokeInvitations()"
                   >
-                    Remove
+                    Revoke {{ activeInvitations() }} link{{ activeInvitations() === 1 ? '' : 's' }}
                   </button>
-                </li>
+                }
+              </div>
+
+              <hr />
+              <h2>2 · Close the list</h2>
+              @if (d.participants.length < minParticipants) {
+                <p class="muted">
+                  You need at least {{ minParticipants }} participants ({{ d.participants.length }}
+                  so far).
+                </p>
+              } @else {
+                <p class="muted">
+                  When everyone has joined, close the list: nobody else can join, and everyone is
+                  asked who they'd rather not give a gift to.
+                  @if (missingWishes() > 0) {
+                    <strong
+                      >{{ missingWishes() }} participant(s) haven't filled in their wishes
+                      yet.</strong
+                    >
+                  }
+                </p>
               }
-            </ul>
-          }
-          @if (d.participants.length >= 2) {
-            <div class="row exclusion-form">
-              <label class="visually-hidden" for="ex-a">First participant</label>
-              <select id="ex-a" [(ngModel)]="exclusionA">
-                <option value="">Choose…</option>
-                @for (p of d.participants; track p.id) {
-                  <option [value]="p.id">{{ p.displayName }}</option>
-                }
-              </select>
-              <span aria-hidden="true">⇄</span>
-              <label class="visually-hidden" for="ex-b">Second participant</label>
-              <select id="ex-b" [(ngModel)]="exclusionB">
-                <option value="">Choose…</option>
-                @for (p of d.participants; track p.id) {
-                  <option [value]="p.id">{{ p.displayName }}</option>
-                }
-              </select>
               <button
                 type="button"
-                class="btn btn-sm"
-                (click)="addExclusion()"
-                [disabled]="busy() || !exclusionA || !exclusionB || exclusionA === exclusionB"
+                class="btn btn-primary"
+                [disabled]="busy() || d.participants.length < minParticipants"
+                (click)="closeRegistrations()"
               >
-                Add
+                🔒 Close the list
               </button>
-            </div>
+            }
+            @case ('exclusions') {
+              <h2>Send the exclusions link</h2>
+              <p class="muted small">
+                Everyone opens this link, picks who they'd rather skip, and validates.
+              </p>
+              <div class="share">
+                <label for="exclusions-link" class="visually-hidden">Exclusions link</label>
+                <input
+                  id="exclusions-link"
+                  readonly
+                  [value]="link(d, 'exclusions')"
+                  (focus)="selectAll($event)"
+                />
+                <button type="button" class="btn btn-sm" (click)="copy(link(d, 'exclusions'))">
+                  {{ copied() ? 'Copied ✓' : 'Copy' }}
+                </button>
+              </div>
+              <div class="row">
+                <button
+                  type="button"
+                  class="btn btn-green"
+                  [disabled]="busy()"
+                  (click)="emailEveryone(d, 'exclusions')"
+                >
+                  ✉️ E-mail everyone
+                </button>
+              </div>
+              <hr />
+              <h2>Draw</h2>
+              <p class="muted">
+                Names are drawn automatically as soon as everyone has validated ({{
+                  confirmedCount()
+                }}/{{ d.participants.length }}). You can also draw now: people who haven't validated
+                simply have no exclusions.
+              </p>
+              <div class="row">
+                <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="draw()">
+                  🎲 Draw now
+                </button>
+                <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="reopen()">
+                  Reopen the list
+                </button>
+              </div>
+            }
+            @case ('drawn') {
+              <h2>Tell everyone</h2>
+              <p class="muted small">Everyone can now discover their giftee with this link.</p>
+              <div class="share">
+                <label for="giftee-link" class="visually-hidden">Event link</label>
+                <input
+                  id="giftee-link"
+                  readonly
+                  [value]="link(d, 'giftee')"
+                  (focus)="selectAll($event)"
+                />
+                <button type="button" class="btn btn-sm" (click)="copy(link(d, 'giftee'))">
+                  {{ copied() ? 'Copied ✓' : 'Copy' }}
+                </button>
+              </div>
+              <button
+                type="button"
+                class="btn btn-green"
+                [disabled]="busy()"
+                (click)="emailEveryone(d, 'giftee')"
+              >
+                ✉️ E-mail everyone
+              </button>
+            }
           }
-        </section>
-
-        <section class="card">
-          <h2>Draw names</h2>
-          @if (d.participants.length < minParticipants) {
-            <p class="muted">
-              You need at least {{ minParticipants }} participants to draw names ({{
-                d.participants.length
-              }}
-              so far).
-            </p>
-          } @else {
-            <p class="muted">
-              Each participant will be secretly assigned someone to buy a gift for. Nobody, not even
-              you, can see the full list. This cannot be undone, and nobody can join afterwards.
-            </p>
-          }
-          <button
-            type="button"
-            class="btn btn-primary"
-            (click)="draw()"
-            [disabled]="busy() || d.participants.length < minParticipants"
-          >
-            🎲 Draw names now
-          </button>
-        </section>
-      }
-
-      @if (d.isOwner) {
-        <section class="card danger-zone">
-          <h2>Delete event</h2>
-          <p class="muted small">
-            Permanently deletes the event, assignments, wishlists and messages.
-          </p>
-          <button type="button" class="btn btn-danger" [disabled]="busy()" (click)="deleteEvent()">
-            Delete this event
-          </button>
+          <details class="danger-zone">
+            <summary>Delete this Secret Santa</summary>
+            <p class="muted small">Permanently deletes the event, wishes, draw and messages.</p>
+            <button
+              type="button"
+              class="btn btn-sm btn-danger"
+              [disabled]="busy()"
+              (click)="deleteEvent()"
+            >
+              Delete permanently
+            </button>
+          </details>
         </section>
       }
     }
   `,
   styles: `
-    .highlight {
-      border-color: var(--green);
-      background: var(--green-light);
+    .stepper {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      padding: 1rem 1.2rem;
     }
-    .invite {
+    .stepper li {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.6rem;
+      align-items: flex-start;
+      opacity: 0.55;
+    }
+    .stepper li.current,
+    .stepper li.done {
+      opacity: 1;
+    }
+    .bullet {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      border: 2px solid var(--line);
+      font-weight: 800;
+    }
+    .current .bullet {
+      background: var(--berry);
+      border-color: var(--berry);
+      color: #fff;
+      box-shadow: 0 0 0 5px rgb(192 40 63 / 15%);
+    }
+    .done .bullet {
+      background: var(--pine-2);
+      border-color: var(--pine-2);
+      color: #fff;
+    }
+    .step-text {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.3;
+    }
+    @media (max-width: 640px) {
+      .stepper {
+        grid-template-columns: 1fr;
+      }
+    }
+    .cta {
+      border: 2px solid var(--berry);
+    }
+    .cta-done {
+      border-color: var(--pine-3);
+    }
+    .progress {
+      height: 8px;
+      border-radius: 999px;
+      background: #f1e9dc;
+      overflow: hidden;
       margin-bottom: 0.5rem;
     }
-    .exclusion-form select {
-      width: auto;
-      flex: 1 1 140px;
+    .progress span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--pine-3), var(--gold));
+      transition: width 0.3s ease;
+    }
+    .person {
+      display: flex;
+      align-items: center;
     }
     .leave {
       margin-top: 0.75rem;
     }
+    .eyebrow-dark {
+      color: var(--berry);
+    }
+    .organiser hr {
+      border: none;
+      border-top: 1px dashed var(--line);
+      margin: 1.4rem 0;
+    }
+    .share {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 0.6rem;
+    }
     .danger-zone {
-      border-color: #f0c4c0;
+      margin-top: 1.5rem;
+      color: var(--muted);
+    }
+    .danger-zone summary {
+      cursor: pointer;
+      font-size: 0.875rem;
     }
   `,
 })
@@ -252,26 +424,73 @@ export class OverviewPage {
   private readonly router = inject(Router);
   protected readonly store = inject(EventStore);
   protected readonly minParticipants = MIN_PARTICIPANTS;
+  protected readonly initials = initials;
 
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   protected readonly invitation = signal<CreatedInvitation | null>(null);
   protected readonly activeInvitations = signal(0);
-  protected readonly exclusions = signal<Exclusion[]>([]);
   protected readonly copied = signal(false);
-  protected exclusionA = '';
-  protected exclusionB = '';
 
-  private readonly names = computed(
-    () => new Map(this.store.detail()?.participants.map((p) => [p.id, p.displayName]) ?? []),
+  protected readonly confirmedCount = computed(
+    () => this.store.detail()?.participants.filter((p) => p.exclusionsConfirmed).length ?? 0,
   );
+  protected readonly missingWishes = computed(
+    () => this.store.detail()?.participants.filter((p) => !p.profileCompleted).length ?? 0,
+  );
+
+  protected readonly steps = computed(() => {
+    const status = this.store.detail()?.event.status ?? 'open';
+    const order = ['open', 'exclusions', 'drawn'];
+    const state = (index: number): Step => {
+      const current = order.indexOf(status);
+      if (status === 'drawn' || index < current) return 'done';
+      return index === current ? 'current' : 'todo';
+    };
+    return [
+      { title: 'Join & wishes', detail: 'Everyone joins and shares wishes', state: state(0) },
+      { title: 'Exclusions', detail: 'Each person picks who to skip', state: state(1) },
+      { title: 'Draw', detail: 'Everyone discovers their giftee', state: state(2) },
+    ];
+  });
+
+  protected readonly ctaDone = computed(() => {
+    const d = this.store.detail();
+    if (!d) return false;
+    return d.event.status === 'open'
+      ? d.me.profileCompleted
+      : d.event.status === 'exclusions'
+        ? d.me.exclusionsConfirmed
+        : false;
+  });
+
+  protected readonly progressPercent = computed(() => {
+    const d = this.store.detail();
+    if (!d || d.participants.length === 0) return 0;
+    if (d.event.status === 'drawn') return 100;
+    const done =
+      d.event.status === 'open'
+        ? d.participants.filter((p) => p.profileCompleted).length
+        : this.confirmedCount();
+    return Math.round((done / d.participants.length) * 100);
+  });
+
+  protected readonly progressLabel = computed(() => {
+    const d = this.store.detail();
+    if (!d) return '';
+    const n = d.participants.length;
+    if (d.event.status === 'open')
+      return `${n - this.missingWishes()}/${n} have filled in their wishes`;
+    if (d.event.status === 'exclusions') return `${this.confirmedCount()}/${n} have validated`;
+    return 'Everyone has a giftee 🎁';
+  });
 
   constructor() {
     effect(() => {
       const detail = this.store.detail();
       if (detail?.isOwner && detail.event.status === 'open') {
-        untracked(() => void this.loadAdminData(detail.event.id));
+        untracked(() => void this.loadInvitations(detail.event.id));
       }
     });
   }
@@ -280,25 +499,20 @@ export class OverviewPage {
     return this.store.detail()!.event.id;
   }
 
-  private async loadAdminData(eventId: string): Promise<void> {
+  private async loadInvitations(eventId: string): Promise<void> {
     try {
-      const [exclusions, active] = await Promise.all([
-        this.backend.listExclusions(eventId),
-        this.backend.countActiveInvitations(eventId),
-      ]);
-      this.exclusions.set(exclusions);
-      this.activeInvitations.set(active);
+      this.activeInvitations.set(await this.backend.countActiveInvitations(eventId));
     } catch (e) {
       this.error.set(errorMessage(e));
     }
   }
 
-  nameOf(participantId: string): string {
-    return this.names().get(participantId) ?? 'Former participant';
+  inviteUrl(invitation: CreatedInvitation): string {
+    return appUrl(`/join/${invitation.token}`);
   }
 
-  inviteUrl(invitation: CreatedInvitation): string {
-    return new URL(`#/join/${invitation.token}`, document.baseURI).toString();
+  link(detail: EventDetail, tab: string): string {
+    return appUrl(`/events/${detail.event.id}/${tab}`);
   }
 
   selectAll(event: FocusEvent): void {
@@ -317,6 +531,26 @@ export class OverviewPage {
 
   go(tab: string): void {
     void this.router.navigate(['/events', this.eventId, tab]);
+  }
+
+  /** Opens the organiser's own mail app with everyone in BCC: free, nothing to configure. */
+  async emailEveryone(detail: EventDetail, tab: 'exclusions' | 'giftee'): Promise<void> {
+    await this.run(async () => {
+      const emails = await this.backend.getParticipantEmails(detail.event.id);
+      const name = detail.event.name;
+      const url = this.link(detail, tab);
+      const [subject, body] =
+        tab === 'exclusions'
+          ? [
+              `${name}: one last step before the draw 🎁`,
+              `Hi!\n\nThe list for "${name}" is closed. Before names are drawn, tell us privately if there's anyone you'd rather not give a gift to (or nobody), then validate:\n\n${url}\n\nNames are drawn as soon as everyone has validated.\n\nSee you soon! 🎄`,
+            ]
+          : [
+              `${name}: discover your Secret Santa giftee 🎉`,
+              `Hi!\n\nNames have been drawn for "${name}". Find out who you're buying a gift for (with their wishes and gift ideas):\n\n${url}\n\nShhh, it's a secret! 🤫`,
+            ];
+      window.location.href = mailtoLink(emails, subject, body);
+    });
   }
 
   /** Runs an action with busy/error handling. Returns true on success. */
@@ -355,24 +589,31 @@ export class OverviewPage {
     }, 'All invitation links have been revoked.');
   }
 
-  async addExclusion(): Promise<void> {
-    const ok = await this.run(() =>
-      this.backend.addExclusion(this.eventId, this.exclusionA, this.exclusionB),
+  async closeRegistrations(): Promise<void> {
+    const missing = this.missingWishes();
+    const warning =
+      missing > 0
+        ? `\n\n${missing} participant(s) haven't filled in their wishes yet (they still can afterwards).`
+        : '';
+    if (!confirm(`Close the list? Nobody else will be able to join.${warning}`)) return;
+    const ok = await this.run(
+      () => this.backend.closeRegistrations(this.eventId),
+      'The list is closed. Send everyone the exclusions link below.',
     );
-    if (ok) {
-      this.exclusionA = '';
-      this.exclusionB = '';
-      this.exclusions.set(await this.backend.listExclusions(this.eventId));
-    }
+    if (ok) await this.store.reload();
   }
 
-  async removeExclusion(exclusion: Exclusion): Promise<void> {
-    const ok = await this.run(() => this.backend.removeExclusion(exclusion.id));
-    if (ok) this.exclusions.update((list) => list.filter((x) => x.id !== exclusion.id));
+  async reopen(): Promise<void> {
+    if (!confirm('Reopen the list? Everyone will have to validate their exclusions again.')) return;
+    const ok = await this.run(
+      () => this.backend.reopenRegistrations(this.eventId),
+      'The list is open again.',
+    );
+    if (ok) await this.store.reload();
   }
 
   async removeParticipant(participant: Participant): Promise<void> {
-    if (!confirm(`Remove ${participant.displayName} from this event?`)) return;
+    if (!confirm(`Remove ${participant.displayName} from this Secret Santa?`)) return;
     const ok = await this.run(
       () => this.backend.removeParticipant(participant.id),
       `${participant.displayName} has been removed.`,
@@ -381,13 +622,16 @@ export class OverviewPage {
   }
 
   async leave(me: Participant): Promise<void> {
-    if (!confirm('Leave this event? Your wishes will be deleted.')) return;
+    if (!confirm('Leave this Secret Santa? Your wishes will be deleted.')) return;
     const ok = await this.run(() => this.backend.removeParticipant(me.id));
     if (ok) await this.router.navigateByUrl('/events');
   }
 
   async draw(): Promise<void> {
-    if (!confirm('Draw names now? Nobody will be able to join or be removed afterwards.')) return;
+    const waiting = (this.store.detail()?.participants.length ?? 0) - this.confirmedCount();
+    const warning =
+      waiting > 0 ? ` ${waiting} participant(s) haven't validated their exclusions.` : '';
+    if (!confirm(`Draw names now?${warning} This cannot be undone.`)) return;
     const ok = await this.run(
       () => this.backend.drawNames(this.eventId),
       'Names have been drawn! 🎉',
@@ -396,7 +640,7 @@ export class OverviewPage {
   }
 
   async deleteEvent(): Promise<void> {
-    if (!confirm('Delete this event and all its data? This cannot be undone.')) return;
+    if (!confirm('Delete this Secret Santa and all its data? This cannot be undone.')) return;
     const ok = await this.run(() => this.backend.deleteEvent(this.eventId));
     if (ok) await this.router.navigateByUrl('/events');
   }

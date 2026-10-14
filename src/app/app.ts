@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HohowhoBackend } from './core/backend/hohowho-backend';
-import { errorMessage } from './core/format';
+import { errorMessage, initials } from './core/format';
 import { DATA_SOURCE } from './core/tokens';
 
 @Component({
@@ -12,14 +12,17 @@ import { DATA_SOURCE } from './core/tokens';
     <header class="topbar">
       <div class="topbar-inner">
         <a routerLink="/events" class="brand" aria-label="HoHoWho home">
-          <img src="favicon.svg" alt="" width="28" height="28" />
-          <span>HoHoWho</span>
+          <span class="logo" aria-hidden="true">🎁</span>
+          <span class="wordmark">Ho<em>Ho</em>Who</span>
         </a>
         @if (user(); as u) {
           <nav class="row" aria-label="Account">
             <a routerLink="/events" class="nav-link">My events</a>
-            <span class="muted small who">{{ u.displayName }}</span>
-            <button type="button" class="btn btn-sm" (click)="signOut()">Sign out</button>
+            <span class="me" [title]="u.email">
+              <span class="avatar" aria-hidden="true">{{ initials(u.displayName) }}</span>
+              <span class="me-name">{{ u.displayName }}</span>
+            </span>
+            <button type="button" class="btn btn-sm signout" (click)="signOut()">Sign out</button>
           </nav>
         }
       </div>
@@ -36,7 +39,7 @@ import { DATA_SOURCE } from './core/tokens';
     </main>
 
     <footer class="footer muted small">
-      <p>HoHoWho · Secret Santa made simple</p>
+      <p>Made with 🎄 · HoHoWho, the secret Secret Santa</p>
       @if (isMock) {
         <p>
           Demo mode: data lives only in this browser.
@@ -47,11 +50,16 @@ import { DATA_SOURCE } from './core/tokens';
   `,
   styles: `
     .topbar {
-      background: var(--red);
-      color: #fff;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgb(18 55 42 / 96%);
+      backdrop-filter: blur(8px);
+      color: var(--snow);
+      border-bottom: 3px solid var(--gold);
     }
     .topbar-inner {
-      max-width: 960px;
+      max-width: 1000px;
       margin: 0 auto;
       padding: 0.6rem 1rem;
       display: flex;
@@ -63,26 +71,62 @@ import { DATA_SOURCE } from './core/tokens';
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      color: #fff;
+      color: var(--snow);
       text-decoration: none;
-      font-weight: 800;
-      font-size: 1.2rem;
     }
-    .brand img {
-      background: #fff;
-      border-radius: 6px;
-      padding: 2px;
+    .logo {
+      display: grid;
+      place-items: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 12px;
+      background: var(--gold);
+      font-size: 1.2rem;
+      transform: rotate(-6deg);
+    }
+    .wordmark {
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 1.45rem;
+      letter-spacing: -0.02em;
+    }
+    .wordmark em {
+      color: var(--gold);
+      font-style: italic;
     }
     .nav-link {
-      color: #fff;
+      color: var(--snow);
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .me {
+      display: inline-flex;
+      align-items: center;
+    }
+    .me .avatar {
+      width: 1.9rem;
+      height: 1.9rem;
+      margin-right: 0.4rem;
+      background: var(--gold);
+    }
+    .me-name {
+      color: var(--gold-soft);
       font-weight: 600;
     }
-    .who {
-      color: #fde7e5;
+    .signout {
+      background: transparent;
+      color: var(--snow);
+      border-color: rgb(251 247 240 / 35%);
+    }
+    @media (max-width: 560px) {
+      .me-name,
+      .nav-link {
+        display: none;
+      }
     }
     .footer {
       text-align: center;
-      padding: 2rem 1rem;
+      padding: 2.5rem 1rem;
     }
     .footer p {
       margin: 0.25rem 0;
@@ -95,6 +139,7 @@ export class App {
   protected readonly isMock = inject(DATA_SOURCE) === 'mock';
   protected readonly user = this.backend.currentUser;
   protected readonly error = signal<string | null>(null);
+  protected readonly initials = initials;
 
   async signOut(): Promise<void> {
     try {

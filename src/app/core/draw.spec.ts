@@ -26,30 +26,42 @@ describe('drawAssignments', () => {
     }
   });
 
-  it('respects exclusions in both directions', () => {
+  it('respects exclusions (giver → excluded receiver)', () => {
     const exclusions = [
       ['a', 'b'],
+      ['b', 'a'],
       ['c', 'd'],
       ['e', 'f'],
+      ['e', 'a'],
     ] as const;
     for (let seed = 1; seed <= 200; seed++) {
       const pairs = drawAssignments(ids, exclusions, seeded(seed));
       expectValid(ids, pairs);
       for (const { giverId, receiverId } of pairs) {
-        const forbidden = exclusions.some(
-          ([x, y]) => (x === giverId && y === receiverId) || (y === giverId && x === receiverId),
-        );
-        expect(forbidden).toBe(false);
+        expect(exclusions.some(([g, r]) => g === giverId && r === receiverId)).toBe(false);
       }
     }
+  });
+
+  it('treats exclusions as one-directional', () => {
+    // a refuses b, but b may still draw a.
+    const seen = new Set<string>();
+    for (let seed = 1; seed <= 200; seed++) {
+      for (const p of drawAssignments(['a', 'b', 'c'], [['a', 'b']], seeded(seed))) {
+        seen.add(`${p.giverId}>${p.receiverId}`);
+      }
+    }
+    expect(seen.has('a>b')).toBe(false);
+    expect(seen.has('b>a')).toBe(true);
   });
 
   it('finds the only valid solution in a heavily constrained group', () => {
     // a can only give to d and c only to b.
     const exclusions = [
       ['a', 'b'],
-      ['c', 'd'],
       ['a', 'c'],
+      ['c', 'a'],
+      ['c', 'd'],
     ] as const;
     for (let seed = 1; seed <= 50; seed++) {
       const pairs = drawAssignments(['a', 'b', 'c', 'd'], exclusions, seeded(seed));
@@ -75,7 +87,16 @@ describe('drawAssignments', () => {
   });
 
   it('reports impossible exclusion sets', () => {
-    expect(() => drawAssignments(['a', 'b', 'c'], [['a', 'c']])).toThrow(DrawImpossibleError);
+    // b and c both refuse a: nobody can give to a.
+    expect(() =>
+      drawAssignments(
+        ['a', 'b', 'c'],
+        [
+          ['b', 'a'],
+          ['c', 'a'],
+        ],
+      ),
+    ).toThrow(DrawImpossibleError);
     const exclusions = [
       ['a', 'b'],
       ['a', 'c'],
@@ -95,7 +116,9 @@ describe('drawAssignments', () => {
 
   it('handles large groups quickly', () => {
     const many = Array.from({ length: 300 }, (_, i) => `p${i}`);
-    const exclusions = many.slice(0, 150).map((id, i) => [id, many[i + 150]] as const);
+    const exclusions = many
+      .slice(0, 150)
+      .flatMap((id, i) => [[id, many[i + 150]] as const, [many[i + 150], id] as const]);
     expectValid(many, drawAssignments(many, exclusions, seeded(3)));
   });
 });

@@ -82,6 +82,17 @@ select tests.assert((select length(value) from tests.ctx where key = 'token') = 
 select tests.assert((select token_hash from public.invitations) = sha256(convert_to((select value from tests.ctx where key = 'token'), 'UTF8')),
                     'only the token hash is stored');
 
+-- Anonymous visitors with the link can preview the invitation, but not join -----------------------
+reset role;
+set role anon;
+select tests.assert((select event_name from public.preview_invitation((select value from tests.ctx where key = 'token'))) = 'Family Christmas',
+                    'anonymous invitation preview');
+select tests.expect_error($$select public.accept_invitation((select value from tests.ctx where key = 'token'))$$,
+                          'anonymous visitors cannot join');
+select tests.expect_error($$select * from public.preview_invitation('wrong')$$, 'wrong token rejected for anon');
+reset role;
+set role authenticated;
+
 -- Eve (outsider) sees nothing and cannot use a bad token -----------------------------------------
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000e';
 select tests.assert((select count(*) from public.events) = 0, 'outsider cannot read the event');
@@ -119,25 +130,22 @@ reset role;
 
 insert into tests.ctx select lower(display_name), id::text from public.participants;
 
--- Exclusions ----------------------------------------------------------------------------------------
+-- Phases: exclusions are only possible once the list is closed ---------------------------------
 set role authenticated;
-set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
-insert into public.exclusions (event_id, participant_a, participant_b)
-values ((select value::uuid from tests.ctx where key = 'event'),
-        (select value::uuid from tests.ctx where key = 'bob'),
-        (select value::uuid from tests.ctx where key = 'carol'));
-select tests.expect_error($$insert into public.exclusions (event_id, participant_a, participant_b)
-                           values ((select value::uuid from tests.ctx where key = 'event'),
-                                   (select value::uuid from tests.ctx where key = 'carol'),
-                                   (select value::uuid from tests.ctx where key = 'bob'))$$,
-                          'duplicate exclusion in reverse order rejected');
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
-select tests.assert((select count(*) from public.exclusions) = 0, 'non-owner cannot read exclusions');
-select tests.expect_error($$insert into public.exclusions (event_id, participant_a, participant_b)
+select tests.expect_error($$select public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'), '{}')$$,
+                          'no exclusions while the list is open');
+select tests.expect_error($$select public.close_registrations((select value::uuid from tests.ctx where key = 'event'))$$,
+                          'only the organiser closes the list');
+select tests.expect_error($$select * from public.participant_emails((select value::uuid from tests.ctx where key = 'event'))$$,
+                          'only the organiser sees e-mail addresses');
+select tests.expect_error($$insert into public.exclusions (event_id, giver_id, excluded_id)
                            values ((select value::uuid from tests.ctx where key = 'event'),
-                                   (select value::uuid from tests.ctx where key = 'alice'),
-                                   (select value::uuid from tests.ctx where key = 'dave'))$$,
-                          'non-owner cannot add exclusions');
+                                   (select value::uuid from tests.ctx where key = 'bob'),
+                                   (select value::uuid from tests.ctx where key = 'alice'))$$,
+                          'exclusions cannot be written directly');
+select tests.expect_error($$update public.participants set exclusions_confirmed_at = now()$$,
+                          'progress flags cannot be faked');
 select tests.expect_error($$select public.apply_draw((select value::uuid from tests.ctx where key = 'event'), '[]')$$,
                           'clients cannot apply a draw');
 select tests.expect_error($$insert into public.assignments (event_id, giver_id, receiver_id)
@@ -158,6 +166,8 @@ select tests.expect_error($$insert into public.wishlist_items (participant_id, t
                            values ((select value::uuid from tests.ctx where key = 'carol'), 'Not mine')$$,
                           'cannot add to someone else''s wishlist');
 select tests.assert(tests.affected($$update public.questionnaires set notes = 'Updated'$$) = 1, 'author updates questionnaire');
+select tests.assert((select profile_completed_at is not null from public.participants where display_name = 'Bob'),
+                    'saving the questionnaire marks the wishes as completed');
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
 select tests.assert((select count(*) from public.questionnaires) = 0, 'questionnaire private before draw');
 select tests.assert((select count(*) from public.wishlist_items) = 0, 'wishlist private before draw');
@@ -165,6 +175,64 @@ select tests.expect_error($$insert into public.messages (event_id, receiver_id, 
                            values ((select value::uuid from tests.ctx where key = 'event'),
                                    (select value::uuid from tests.ctx where key = 'bob'), true, 'Hi')$$,
                           'no messages before the draw');
+reset role;
+
+-- Draw cannot happen while the list is open --------------------------------------------------------
+set role service_role;
+select tests.expect_error($$select public.apply_draw((select value::uuid from tests.ctx where key = 'event'), '[]')$$,
+                          'draw requires a closed list');
+reset role;
+
+-- Organiser closes the list; everyone chooses exclusions -------------------------------------------
+set role authenticated;
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+select public.close_registrations((select value::uuid from tests.ctx where key = 'event'));
+select tests.assert((select status from public.events) = 'exclusions', 'list closed');
+select tests.assert((select count(*) from public.participant_emails((select value::uuid from tests.ctx where key = 'event'))) = 4,
+                    'organiser sees participant e-mails');
+select tests.expect_error($$select public.close_registrations((select value::uuid from tests.ctx where key = 'event'))$$,
+                          'closing twice rejected');
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000e';
+select tests.expect_error($$select * from public.preview_invitation((select value from tests.ctx where key = 'token'))$$,
+                          'invitation unusable once the list is closed');
+select tests.expect_error($$select public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'), '{}')$$,
+                          'outsider cannot submit exclusions');
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+select tests.expect_error(format($$select public.submit_exclusions(%L, %L)$$,
+  (select value from tests.ctx where key = 'event'),
+  array[(select value from tests.ctx where key = 'bob')]::text),
+  'cannot exclude yourself');
+select tests.expect_error(format($$select public.submit_exclusions(%L, %L)$$,
+  (select value from tests.ctx where key = 'event'),
+  array[(select value from tests.ctx where key = 'alice'), (select value from tests.ctx where key = 'carol'),
+        (select value from tests.ctx where key = 'dave')]::text),
+  'must leave at least one possible giftee');
+select tests.assert(public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'),
+                                             array[(select value::uuid from tests.ctx where key = 'carol')]) = false,
+                    'bob validates; others still pending');
+select tests.assert((select count(*) from public.exclusions) = 1, 'bob reads his exclusion');
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+select tests.assert((select count(*) from public.exclusions) = 0, 'exclusions are private, even to the organiser');
+select public.reopen_registrations((select value::uuid from tests.ctx where key = 'event'));
+select tests.assert((select status from public.events) = 'open', 'list reopened');
+select tests.assert((select count(*) from public.participants where exclusions_confirmed_at is not null) = 0,
+                    'reopening resets validations');
+select public.close_registrations((select value::uuid from tests.ctx where key = 'event'));
+select tests.assert(public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'), '{}') = false,
+                    'alice validates');
+
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000b';
+select tests.assert((select count(*) from public.exclusions) = 0, 'reopening cleared bob''s exclusions');
+select public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'),
+                                array[(select value::uuid from tests.ctx where key = 'carol')]);
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000c';
+select public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'), '{}');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000d';
+select tests.assert(public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'), null) = true,
+                    'last validation reports everyone is ready');
 reset role;
 
 -- Draw (service role) ----------------------------------------------------------------------------
@@ -216,7 +284,8 @@ select tests.expect_error($$select public.create_invitation((select value::uuid 
                           'no invitations after the draw');
 select tests.assert(tests.affected($$delete from public.participants where display_name = 'Dave'$$) = 0,
                     'participants cannot be removed after the draw');
-select tests.assert(tests.affected($$delete from public.exclusions$$) = 0, 'exclusions frozen after the draw');
+select tests.expect_error($$select public.submit_exclusions((select value::uuid from tests.ctx where key = 'event'), '{}')$$,
+                          'exclusions frozen after the draw');
 insert into public.messages (event_id, receiver_id, from_santa, body)
 values ((select value::uuid from tests.ctx where key = 'event'), (select value::uuid from tests.ctx where key = 'bob'), true, 'Ho ho ho!');
 select tests.expect_error($$insert into public.messages (event_id, receiver_id, from_santa, body)

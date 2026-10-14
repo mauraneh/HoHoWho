@@ -4,7 +4,6 @@ import {
   CreatedInvitation,
   EventDetail,
   EventSummary,
-  Exclusion,
   GifteeProfile,
   InvitationPreview,
   Message,
@@ -23,9 +22,9 @@ export class BackendError extends Error {
   }
 }
 
-export interface SignUpResult {
-  /** True when the account must be confirmed through the e-mail link before signing in. */
-  needsEmailConfirmation: boolean;
+export interface SignInLinkResult {
+  /** True when the user is already signed in (demo mode); false when a link was e-mailed. */
+  signedIn: boolean;
 }
 
 /**
@@ -39,8 +38,18 @@ export abstract class HohowhoBackend {
   /** Resolves once a persisted session has been restored. */
   abstract whenReady(): Promise<void>;
 
-  abstract signUp(email: string, password: string, displayName: string): Promise<SignUpResult>;
-  abstract signIn(email: string, password: string): Promise<void>;
+  /**
+   * Passwordless sign-in: e-mails a one-click sign-in link. The account is created on first use.
+   * @param displayName shown to other participants; only used when the account is created.
+   * @param next in-app path to open after following the link (e.g. an invitation).
+   */
+  abstract requestSignInLink(
+    email: string,
+    displayName: string,
+    next: string,
+  ): Promise<SignInLinkResult>;
+  /** Error reported by the auth server when a sign-in link failed (expired, already used…). */
+  abstract consumeAuthError(): string | null;
   abstract signOut(): Promise<void>;
 
   abstract listEvents(): Promise<EventSummary[]>;
@@ -55,9 +64,24 @@ export abstract class HohowhoBackend {
   abstract previewInvitation(token: string): Promise<InvitationPreview>;
   abstract acceptInvitation(token: string): Promise<string>;
 
-  abstract listExclusions(eventId: string): Promise<Exclusion[]>;
-  abstract addExclusion(eventId: string, participantA: string, participantB: string): Promise<void>;
-  abstract removeExclusion(exclusionId: string): Promise<void>;
+  /** Organiser: close the list so everyone moves on to choosing exclusions. */
+  abstract closeRegistrations(eventId: string): Promise<void>;
+  /** Organiser: reopen the list (resets everyone's exclusion choices). */
+  abstract reopenRegistrations(eventId: string): Promise<void>;
+  /** Organiser: e-mail addresses of all participants (for "e-mail everyone"). */
+  abstract getParticipantEmails(eventId: string): Promise<string[]>;
+
+  /** Participant ids the current user does not want to give a gift to. Private to them. */
+  abstract getMyExclusions(eventId: string): Promise<string[]>;
+  /** Saves the current user's exclusions and validates the step. */
+  abstract submitExclusions(
+    eventId: string,
+    excludedIds: string[],
+  ): Promise<{ everyoneConfirmed: boolean }>;
+  /**
+   * Draws names. Allowed for any participant once everyone has validated their exclusions,
+   * and for the organiser at any time after closing the list.
+   */
   abstract drawNames(eventId: string): Promise<void>;
 
   /** The participant the current user must buy a gift for, once names are drawn. */

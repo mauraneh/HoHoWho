@@ -12,6 +12,11 @@ export const eventRoutes: Routes = [
     loadComponent: () => import('./wishes-page').then((m) => m.WishesPage),
   },
   {
+    path: 'exclusions',
+    title: 'Exclusions · HoHoWho',
+    loadComponent: () => import('./exclusions-page').then((m) => m.ExclusionsPage),
+  },
+  {
     path: 'giftee',
     title: 'My giftee · HoHoWho',
     loadComponent: () => import('./giftee-page').then((m) => m.GifteePage),

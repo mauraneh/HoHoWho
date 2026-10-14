@@ -1,4 +1,5 @@
-export type EventStatus = 'open' | 'drawn';
+/** open: joining + wishes · exclusions: list closed, everyone picks exclusions · drawn. */
+export type EventStatus = 'open' | 'exclusions' | 'drawn';
 
 export interface AppUser {
   id: string;
@@ -40,6 +41,10 @@ export interface Participant {
   userId: string;
   displayName: string;
   joinedAt: string;
+  /** Has filled in the wishes questionnaire. */
+  profileCompleted: boolean;
+  /** Has validated their exclusions (exclusions phase). */
+  exclusionsConfirmed: boolean;
 }
 
 export interface EventDetail {
@@ -48,13 +53,6 @@ export interface EventDetail {
   /** The current user's participant row in this event. */
   me: Participant;
   isOwner: boolean;
-}
-
-export interface Exclusion {
-  id: string;
-  eventId: string;
-  participantA: string;
-  participantB: string;
 }
 
 export interface Questionnaire {

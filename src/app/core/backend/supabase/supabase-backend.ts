@@ -12,7 +12,6 @@ import {
   CreatedInvitation,
   EventDetail,
   EventSummary,
-  Exclusion,
   GiftEvent,
   GifteeProfile,
   InvitationPreview,
@@ -24,7 +23,7 @@ import {
   ThreadRole,
   WishlistItem,
 } from '../../models';
-import { BackendError, HohowhoBackend, SignUpResult } from '../hohowho-backend';
+import { BackendError, HohowhoBackend, SignInLinkResult } from '../hohowho-backend';
 
 type Row = Record<string, unknown>;
 
@@ -54,6 +53,8 @@ function toParticipant(row: Row): Participant {
     userId: row['user_id'] as string,
     displayName: row['display_name'] as string,
     joinedAt: row['joined_at'] as string,
+    profileCompleted: row['profile_completed_at'] != null,
+    exclusionsConfirmed: row['exclusions_confirmed_at'] != null,
   };
 }
 
@@ -92,6 +93,21 @@ function toUser(user: User): AppUser {
   };
 }
 
+function friendlyAuthError(error: { message: string; status?: number; code?: string }): string {
+  const message = error.message ?? '';
+  if (error.status === 429 || /rate limit/i.test(message)) {
+    return 'Too many sign-in e-mails were sent. Please wait a few minutes and try again.';
+  }
+  if (/email/i.test(message) && /(valid|format)/i.test(message)) {
+    return 'Please enter a valid e-mail address.';
+  }
+  if (/expired|invalid/i.test(message)) {
+    return 'This sign-in link has expired or was already used. Request a new one below.';
+  }
+  console.error(error);
+  return 'We could not send the sign-in link. Please try again.';
+}
+
 /** Converts database errors into messages that are safe to display. */
 function fail(error: PostgrestError | { message: string; code?: string }): never {
   switch (error.code) {
@@ -125,12 +141,16 @@ export class SupabaseBackend extends HohowhoBackend {
   private readonly ready: Promise<void>;
   readonly currentUser = this.user.asReadonly();
 
+  private authError: string | null = null;
+
   constructor(config: RuntimeConfig) {
     super();
     this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
       auth: {
-        // PKCE puts the auth code in the query string, which works with hash-based routing.
-        flowType: 'pkce',
+        // Implicit flow: the e-mailed link signs in on any device or browser (PKCE would require
+        // opening it in the browser that requested it). The tokens arrive in the URL fragment and
+        // are consumed before the router starts (see createBackend).
+        flowType: 'implicit',
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
@@ -139,9 +159,30 @@ export class SupabaseBackend extends HohowhoBackend {
     this.client.auth.onAuthStateChange((_event, session) => {
       this.user.set(session?.user ? toUser(session.user) : null);
     });
-    this.ready = this.client.auth.getSession().then(({ data }) => {
+    this.ready = this.client.auth.getSession().then(({ data, error }) => {
       this.user.set(data.session?.user ? toUser(data.session.user) : null);
+      this.cleanAuthFragment();
+      if (error && !this.authError) this.authError = friendlyAuthError(error);
     });
+  }
+
+  /** Removes auth tokens or errors left in the URL fragment so the router never sees them. */
+  private cleanAuthFragment(): void {
+    const fragment = window.location.hash.replace(/^#/, '');
+    if (!/(^|&)(access_token|error|error_code|error_description)=/.test(fragment)) return;
+    const description = new URLSearchParams(fragment).get('error_description');
+    if (description) this.authError = friendlyAuthError({ message: description });
+    window.history.replaceState(
+      window.history.state,
+      '',
+      window.location.pathname + window.location.search,
+    );
+  }
+
+  consumeAuthError(): string | null {
+    const error = this.authError;
+    this.authError = null;
+    return error;
   }
 
   whenReady(): Promise<void> {
@@ -154,22 +195,25 @@ export class SupabaseBackend extends HohowhoBackend {
     return user;
   }
 
-  async signUp(email: string, password: string, displayName: string): Promise<SignUpResult> {
-    const { data, error } = await this.client.auth.signUp({
-      email,
-      password,
+  async requestSignInLink(
+    email: string,
+    displayName: string,
+    next: string,
+  ): Promise<SignInLinkResult> {
+    const redirect = new URL(document.baseURI);
+    redirect.hash = '';
+    if (next && next !== '/events') redirect.searchParams.set('next', next);
+    const name = displayName.trim();
+    const { error } = await this.client.auth.signInWithOtp({
+      email: email.trim(),
       options: {
-        data: { display_name: displayName.trim() },
-        emailRedirectTo: window.location.origin + window.location.pathname,
+        shouldCreateUser: true,
+        emailRedirectTo: redirect.toString(),
+        data: name ? { display_name: name } : undefined,
       },
     });
-    if (error) throw new BackendError(error.message);
-    return { needsEmailConfirmation: !data.session };
-  }
-
-  async signIn(email: string, password: string): Promise<void> {
-    const { error } = await this.client.auth.signInWithPassword({ email, password });
-    if (error) throw new BackendError(error.message);
+    if (error) throw new BackendError(friendlyAuthError(error));
+    return { signedIn: false };
   }
 
   async signOut(): Promise<void> {
@@ -284,36 +328,42 @@ export class SupabaseBackend extends HohowhoBackend {
     return data as string;
   }
 
-  async listExclusions(eventId: string): Promise<Exclusion[]> {
-    const { data, error } = await this.client
-      .from('exclusions')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('created_at');
-    if (error) fail(error);
-    return data.map((row) => ({
-      id: row['id'],
-      eventId: row['event_id'],
-      participantA: row['participant_a'],
-      participantB: row['participant_b'],
-    }));
-  }
-
-  async addExclusion(eventId: string, participantA: string, participantB: string): Promise<void> {
-    const { error } = await this.client
-      .from('exclusions')
-      .insert({ event_id: eventId, participant_a: participantA, participant_b: participantB });
+  async closeRegistrations(eventId: string): Promise<void> {
+    const { error } = await this.client.rpc('close_registrations', { p_event_id: eventId });
     if (error) fail(error);
   }
 
-  async removeExclusion(exclusionId: string): Promise<void> {
+  async reopenRegistrations(eventId: string): Promise<void> {
+    const { error } = await this.client.rpc('reopen_registrations', { p_event_id: eventId });
+    if (error) fail(error);
+  }
+
+  async getParticipantEmails(eventId: string): Promise<string[]> {
+    const { data, error } = await this.client.rpc('participant_emails', { p_event_id: eventId });
+    if (error) fail(error);
+    return (data as Row[]).map((row) => row['email'] as string).filter(Boolean);
+  }
+
+  async getMyExclusions(eventId: string): Promise<string[]> {
+    // RLS only returns the current user's own choices.
     const { data, error } = await this.client
       .from('exclusions')
-      .delete()
-      .eq('id', exclusionId)
-      .select('id');
+      .select('excluded_id')
+      .eq('event_id', eventId);
     if (error) fail(error);
-    if (data.length === 0) throw new BackendError('This exclusion can no longer be removed.');
+    return data.map((row) => row['excluded_id'] as string);
+  }
+
+  async submitExclusions(
+    eventId: string,
+    excludedIds: string[],
+  ): Promise<{ everyoneConfirmed: boolean }> {
+    const { data, error } = await this.client.rpc('submit_exclusions', {
+      p_event_id: eventId,
+      p_excluded: excludedIds,
+    });
+    if (error) fail(error);
+    return { everyoneConfirmed: data === true };
   }
 
   async drawNames(eventId: string): Promise<void> {

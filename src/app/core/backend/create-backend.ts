@@ -15,5 +15,8 @@ export async function createBackend(environment: AppEnvironment): Promise<Hohowh
     loadRuntimeConfig(),
     import('./supabase/supabase-backend'),
   ]);
-  return new SupabaseBackend(config);
+  const backend = new SupabaseBackend(config);
+  // Consume a sign-in link (tokens in the URL fragment) before the router reads the URL.
+  await backend.whenReady();
+  return backend;
 }

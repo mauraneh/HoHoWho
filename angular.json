@@ -30,7 +30,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": [
+              "@fontsource-variable/fraunces/index.css",
+              "@fontsource-variable/dm-sans/index.css",
+              "src/styles.css"
+            ]
           },
           "configurations": {
             "production": {

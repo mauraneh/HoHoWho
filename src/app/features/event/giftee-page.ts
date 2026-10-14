@@ -28,14 +28,16 @@ import { EventStore } from './event-store';
     @if (loading()) {
       <p class="muted">Loading…</p>
     } @else if (giftee(); as g) {
-      <section class="card reveal">
-        <p class="muted">You are the Secret Santa of</p>
-        <h2 class="name">🎁 {{ g.participant.displayName }}</h2>
-        <p class="muted small">Keep it secret! Use the anonymous messages to ask questions.</p>
-        <a routerLink="../messages" class="btn btn-sm">Send an anonymous message</a>
+      <section class="card card-night reveal">
+        <div class="snow" aria-hidden="true"></div>
+        <div class="gift" aria-hidden="true">🎁</div>
+        <span class="eyebrow">You are the Secret Santa of</span>
+        <h2 class="name">{{ g.participant.displayName }}</h2>
+        <p class="muted small">Shhh 🤫 keep it secret! Ask questions with anonymous messages.</p>
+        <a routerLink="../messages" class="btn btn-gold btn-sm">✉️ Send an anonymous message</a>
       </section>
 
-      <div class="grid">
+      <div class="grid pair">
         <section class="card">
           <h2>What they told us</h2>
           @if (g.questionnaire; as q) {
@@ -143,11 +145,35 @@ import { EventStore } from './event-store';
   styles: `
     .reveal {
       text-align: center;
-      background: linear-gradient(135deg, #fff 0%, var(--green-light) 100%);
+      padding: 2.25rem 1.5rem;
+    }
+    .reveal > * {
+      position: relative;
+    }
+    .gift {
+      font-size: 3rem;
+      animation: wiggle 2.4s ease-in-out infinite;
+    }
+    @keyframes wiggle {
+      0%,
+      100% {
+        transform: rotate(0);
+      }
+      20% {
+        transform: rotate(-8deg) scale(1.05);
+      }
+      40% {
+        transform: rotate(6deg);
+      }
+    }
+    .pair {
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      align-items: start;
     }
     .name {
-      font-size: 2rem;
-      color: var(--green);
+      font-size: clamp(2.4rem, 8vw, 3.6rem);
+      color: var(--gold);
+      margin: 0.35rem 0 0.75rem;
     }
     .chips {
       margin-bottom: 0.75rem;

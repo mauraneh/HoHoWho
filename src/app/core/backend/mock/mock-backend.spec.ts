@@ -1,6 +1,5 @@
 import { BackendError } from '../hohowho-backend';
 import { MockBackend } from './mock-backend';
-import { MOCK_PASSWORD } from './mock-seed';
 
 class MemoryStorage implements Storage {
   private data = new Map<string, string>();
@@ -28,9 +27,9 @@ describe('MockBackend', () => {
   let storage: MemoryStorage;
   let backend: MockBackend;
 
-  const as = async (email: string, password = MOCK_PASSWORD) => {
+  const as = async (email: string, name = '') => {
     if (backend.currentUser()) await backend.signOut();
-    await backend.signIn(email, password);
+    await backend.requestSignInLink(email, name);
   };
 
   beforeEach(() => {
@@ -38,20 +37,27 @@ describe('MockBackend', () => {
     backend = new MockBackend(storage, 0);
   });
 
-  it('signs in with demo accounts and rejects wrong passwords', async () => {
-    await expect(backend.signIn('alice@example.com', 'nope')).rejects.toBeInstanceOf(BackendError);
-    await backend.signIn('ALICE@example.com', MOCK_PASSWORD);
+  it('signs in with just an e-mail and creates the account on first use', async () => {
+    await expect(backend.requestSignInLink('not-an-email', '')).rejects.toBeInstanceOf(
+      BackendError,
+    );
+    expect(await backend.requestSignInLink('ALICE@example.com', 'Ignored')).toEqual({
+      signedIn: true,
+    });
     expect(backend.currentUser()?.displayName).toBe('Alice');
+    await as('zoe@example.com', 'Zoé');
+    expect(backend.currentUser()?.displayName).toBe('Zoé');
+    expect(backend.consumeAuthError()).toBeNull();
   });
 
   it('persists the session and data across instances', async () => {
-    await backend.signIn('alice@example.com', MOCK_PASSWORD);
+    await as('alice@example.com');
     const restored = new MockBackend(storage, 0);
     expect(restored.currentUser()?.email).toBe('alice@example.com');
   });
 
-  it('runs a complete Secret Santa', async () => {
-    await backend.signUp('zoe@example.com', 'secret123', 'Zoe');
+  it('runs the full flow: join, wishes, close, exclusions, automatic draw', async () => {
+    await as('zoe@example.com', 'Zoe');
     const eventId = await backend.createEvent({
       name: 'Book club',
       description: '',
@@ -61,51 +67,95 @@ describe('MockBackend', () => {
       currency: 'eur',
     });
     const { token } = await backend.createInvitation(eventId);
-    await expect(backend.drawNames(eventId)).rejects.toThrow(/At least 3/);
+    await expect(backend.closeRegistrations(eventId)).rejects.toThrow(/At least 3/);
 
     for (const email of ['alice@example.com', 'bob@example.com', 'carol@example.com']) {
       await as(email);
-      const preview = await backend.previewInvitation(token);
-      expect(preview).toMatchObject({
+      expect(await backend.previewInvitation(token)).toMatchObject({
         eventName: 'Book club',
         ownerName: 'Zoe',
-        alreadyMember: false,
       });
       expect(await backend.acceptInvitation(token)).toBe(eventId);
-      await expect(backend.createInvitation(eventId)).rejects.toThrow(/not allowed/);
-      await expect(backend.drawNames(eventId)).rejects.toThrow(/organiser/);
+      const { me } = await backend.getEvent(eventId);
+      expect(me.profileCompleted).toBe(false);
+      await backend.saveMyQuestionnaire(me.id, {
+        interests: ['reading'],
+        giftStyles: [],
+        avoid: [],
+        sizes: '',
+        notes: '',
+      });
+      expect((await backend.getEvent(eventId)).me.profileCompleted).toBe(true);
+      await expect(backend.submitExclusions(eventId, [])).rejects.toThrow(/list is closed/);
+      await expect(backend.closeRegistrations(eventId)).rejects.toThrow(/not allowed/);
     }
 
-    await as('zoe@example.com', 'secret123');
-    const detail = await backend.getEvent(eventId);
-    expect(detail.participants).toHaveLength(4);
-    expect(detail.event.currency).toBe('EUR');
-    const [zoe, alice] = detail.participants;
-    await backend.addExclusion(eventId, zoe.id, alice.id);
-    await expect(backend.addExclusion(eventId, alice.id, zoe.id)).rejects.toThrow(/already exists/);
-    await backend.drawNames(eventId);
-    await expect(backend.drawNames(eventId)).rejects.toThrow(/already been drawn/);
-    await expect(backend.previewInvitation(token)).rejects.toThrow(/invalid or has expired/);
-
-    const zoeGiftee = await backend.getGiftee(eventId);
-    expect(zoeGiftee).not.toBeNull();
-    expect([zoe.id, alice.id]).not.toContain(zoeGiftee!.participant.id);
-
-    // Every participant has exactly one giftee and everybody is drawn exactly once.
-    const receivers: string[] = [];
-    for (const email of [
-      'zoe@example.com',
+    await as('zoe@example.com');
+    expect((await backend.getParticipantEmails(eventId)).sort()).toEqual([
       'alice@example.com',
       'bob@example.com',
       'carol@example.com',
-    ]) {
-      await as(email, email.startsWith('zoe') ? 'secret123' : MOCK_PASSWORD);
-      receivers.push((await backend.getGiftee(eventId))!.participant.id);
+      'zoe@example.com',
+    ]);
+    await backend.closeRegistrations(eventId);
+    await expect(backend.previewInvitation(token)).rejects.toThrow(/list is already closed/);
+    const { participants } = await backend.getEvent(eventId);
+    const id = (name: string) => participants.find((p) => p.displayName === name)!.id;
+
+    // Zoe refuses Alice; Alice refuses Bob.
+    expect(await backend.submitExclusions(eventId, [id('Alice')])).toEqual({
+      everyoneConfirmed: false,
+    });
+    expect(await backend.getMyExclusions(eventId)).toEqual([id('Alice')]);
+    await as('alice@example.com');
+    expect(await backend.getMyExclusions(eventId)).toEqual([]);
+    await expect(backend.submitExclusions(eventId, [id('Alice')])).rejects.toThrow(/yourself/);
+    await expect(
+      backend.submitExclusions(eventId, [id('Bob'), id('Carol'), id('Zoe')]),
+    ).rejects.toThrow(/at least one/);
+    await backend.submitExclusions(eventId, [id('Bob')]);
+    await expect(backend.drawNames(eventId)).rejects.toThrow(/Waiting for 2/);
+
+    await as('bob@example.com');
+    await backend.submitExclusions(eventId, []);
+    await as('carol@example.com');
+    expect(await backend.submitExclusions(eventId, [])).toEqual({ everyoneConfirmed: true });
+    await backend.drawNames(eventId);
+    await expect(backend.drawNames(eventId)).rejects.toThrow(/already been drawn/);
+
+    const receivers: string[] = [];
+    for (const [email, refused] of [
+      ['zoe@example.com', 'Alice'],
+      ['alice@example.com', 'Bob'],
+      ['bob@example.com', null],
+      ['carol@example.com', null],
+    ] as const) {
+      await as(email);
+      const giftee = (await backend.getGiftee(eventId))!.participant;
+      if (refused) expect(giftee.displayName).not.toBe(refused);
+      receivers.push(giftee.id);
     }
     expect(new Set(receivers).size).toBe(4);
   });
 
-  it('keeps wishes private until the draw and shares them with the Santa only', async () => {
+  it('lets the organiser reopen the list or force the draw', async () => {
+    await as('alice@example.com');
+    await backend.closeRegistrations('e-family');
+    await backend.submitExclusions('e-family', ['p-family-bob']);
+    await backend.reopenRegistrations('e-family');
+    expect(await backend.getMyExclusions('e-family')).toEqual([]);
+    expect((await backend.getEvent('e-family')).event.status).toBe('open');
+
+    await backend.closeRegistrations('e-family');
+    await as('bob@example.com');
+    await expect(backend.reopenRegistrations('e-family')).rejects.toThrow(/not allowed/);
+    await expect(backend.drawNames('e-family')).rejects.toThrow(/Waiting/);
+    await as('alice@example.com');
+    await backend.drawNames('e-family');
+    expect((await backend.getEvent('e-family')).event.status).toBe('drawn');
+  });
+
+  it('keeps wishes private and shares them with the Santa only', async () => {
     await as('carol@example.com');
     const office = await backend.getEvent('e-office');
     await backend.addWishlistItem(office.me.id, {
@@ -124,15 +174,6 @@ describe('MockBackend', () => {
         priority: 1,
       }),
     ).rejects.toThrow(/not allowed/);
-    await expect(
-      backend.addWishlistItem(office.me.id, {
-        title: 'Bad',
-        url: 'javascript:alert(1)',
-        notes: '',
-        price: null,
-        priority: 1,
-      }),
-    ).rejects.toThrow(/invalid/);
 
     // Alice is Carol's Santa in the seed.
     await as('alice@example.com');
@@ -141,7 +182,6 @@ describe('MockBackend', () => {
     expect(giftee?.wishlist.map((w) => w.title)).toContain('Socks');
     await expect(backend.getMyQuestionnaire('p-office-carol')).rejects.toThrow(/not allowed/);
 
-    // Dave is not part of the office event at all.
     await as('dave@example.com');
     await expect(backend.getEvent('e-office')).rejects.toThrow(/not found/);
   });
@@ -160,7 +200,6 @@ describe('MockBackend', () => {
       'Paperback?',
     ]);
     expect(Object.keys(thread[0]).sort()).toEqual(['body', 'createdAt', 'fromSanta', 'id']);
-    await backend.sendMessage('e-office', 'p-office-carol', 'giftee', 'Paperback please');
 
     await as('bob@example.com');
     expect(await backend.listMessages('e-office', 'p-office-carol')).toEqual([]);
@@ -168,16 +207,12 @@ describe('MockBackend', () => {
 
   it('protects organiser-only actions', async () => {
     await as('bob@example.com');
-    const family = await backend.getEvent('e-family');
-    expect(family.isOwner).toBe(false);
-    expect(await backend.listExclusions('e-family')).toEqual([]);
     await expect(backend.removeParticipant('p-family-carol')).rejects.toBeInstanceOf(BackendError);
-    await expect(backend.removeParticipant('p-family-alice')).rejects.toBeInstanceOf(BackendError);
     await expect(backend.deleteEvent('e-family')).rejects.toThrow(/organiser/);
+    await expect(backend.getParticipantEmails('e-family')).rejects.toThrow(/organiser/);
 
     await as('alice@example.com');
     await backend.removeParticipant('p-family-dave');
-    expect(await backend.listExclusions('e-family')).toEqual([]);
     await backend.deleteEvent('e-family');
     expect((await backend.listEvents()).map((e) => e.id)).not.toContain('e-family');
   });

@@ -33,3 +33,26 @@ export function formatBudget(min: number | null, max: number | null, currency: s
 export function safeReturnUrl(value: string | null | undefined): string {
   return value && value.startsWith('/') && !value.startsWith('//') ? value : '/events';
 }
+
+/** Builds a mailto: link that opens the user's own mail app (no e-mail service needed). */
+export function mailtoLink(bcc: string[], subject: string, body: string): string {
+  const params = [`subject=${encodeURIComponent(subject)}`, `body=${encodeURIComponent(body)}`];
+  if (bcc.length) params.unshift(`bcc=${bcc.map(encodeURIComponent).join(',')}`);
+  return `mailto:?${params.join('&')}`;
+}
+
+/** Absolute URL of an in-app path, valid on any host and base path (hash routing). */
+export function appUrl(path: string): string {
+  return new URL(`#${path}`, document.baseURI.split('#')[0]).toString();
+}
+
+export function initials(name: string): string {
+  return (
+    name
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]!.toUpperCase())
+      .join('') || '?'
+  );
+}

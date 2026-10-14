@@ -18,31 +18,36 @@ import { EventStore } from './event-store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container">
-      <p><a routerLink="/events">← My events</a></p>
+      <a routerLink="/events" class="back">← My events</a>
 
       @if (store.error(); as e) {
         <div class="alert alert-error" role="alert">{{ e }}</div>
       }
 
       @if (store.detail(); as d) {
-        <header class="event-header">
-          <div class="spread">
+        <header class="card card-night banner">
+          <div class="snow" aria-hidden="true"></div>
+          <div class="banner-body">
+            <span class="eyebrow">Secret Santa</span>
             <h1>{{ d.event.name }}</h1>
-            @if (d.event.status === 'drawn') {
-              <span class="badge badge-green">Names drawn</span>
-            } @else {
-              <span class="badge">Open for participants</span>
+            <div class="meta">
+              <span
+                >📅
+                {{
+                  d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date to be decided'
+                }}</span
+              >
+              <span>💰 {{ budget() }}</span>
+              <span
+                >👥 {{ d.participants.length }} participant{{
+                  d.participants.length === 1 ? '' : 's'
+                }}</span
+              >
+            </div>
+            @if (d.event.description) {
+              <p class="description">{{ d.event.description }}</p>
             }
           </div>
-          <p class="muted">
-            {{ d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date not set' }}
-            · Budget: {{ budget() }} · {{ d.participants.length }} participant{{
-              d.participants.length === 1 ? '' : 's'
-            }}
-          </p>
-          @if (d.event.description) {
-            <p class="description">{{ d.event.description }}</p>
-          }
         </header>
 
         <nav class="tabs" aria-label="Event sections">
@@ -50,8 +55,16 @@ import { EventStore } from './event-store';
             >Overview</a
           >
           <a routerLink="wishes" routerLinkActive="active">My wishes</a>
+          @if (d.event.status === 'exclusions') {
+            <a routerLink="exclusions" routerLinkActive="active">
+              Exclusions
+              @if (!d.me.exclusionsConfirmed) {
+                <span class="dot" aria-label="to do"></span>
+              }
+            </a>
+          }
           @if (d.event.status === 'drawn') {
-            <a routerLink="giftee" routerLinkActive="active">My giftee</a>
+            <a routerLink="giftee" routerLinkActive="active">🎁 My giftee</a>
             <a routerLink="messages" routerLinkActive="active">Messages</a>
           }
         </nav>
@@ -63,27 +76,45 @@ import { EventStore } from './event-store';
     </div>
   `,
   styles: `
-    .description {
-      white-space: pre-line;
-    }
-    .tabs {
-      display: flex;
-      gap: 0.25rem;
-      overflow-x: auto;
-      border-bottom: 1px solid var(--line);
-      margin-bottom: 1rem;
-    }
-    .tabs a {
-      padding: 0.6rem 1rem;
-      color: var(--muted);
-      font-weight: 600;
+    .back {
+      display: inline-block;
+      margin-bottom: 0.9rem;
+      font-weight: 700;
       text-decoration: none;
-      border-bottom: 3px solid transparent;
-      white-space: nowrap;
     }
-    .tabs a.active {
-      color: var(--red);
-      border-bottom-color: var(--red);
+    .banner {
+      padding: 1.8rem 1.6rem;
+    }
+    .banner-body {
+      position: relative;
+    }
+    .banner h1 {
+      margin: 0.25rem 0 0.75rem;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+    .meta span {
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      background: rgb(251 247 240 / 12%);
+      font-size: 0.875rem;
+    }
+    .description {
+      margin: 1rem 0 0;
+      white-space: pre-line;
+      color: rgb(251 247 240 / 85%);
+    }
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin-left: 0.3rem;
+      border-radius: 50%;
+      background: var(--berry);
+      vertical-align: middle;
     }
   `,
 })

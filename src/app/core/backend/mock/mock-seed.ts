@@ -1,14 +1,13 @@
 import { MockDb } from './mock-db';
 
-export const MOCK_PASSWORD = 'password123';
-
 const day = 24 * 60 * 60 * 1000;
 const iso = (offsetDays: number) => new Date(Date.now() + offsetDays * day).toISOString();
 const date = (offsetDays: number) => iso(offsetDays).slice(0, 10);
 
 /**
- * Demo data for local development. Every account uses MOCK_PASSWORD.
- * - "Family Christmas" is open (Alice organises): try invitations, exclusions and the draw.
+ * Demo data for local development. Sign in with any of the demo e-mail addresses.
+ * - "Family Christmas" is open (Alice organises): try invitations, closing the list,
+ *   exclusions and the draw (Bob and Carol already filled in their wishes).
  * - "Office Party" is already drawn: try the giftee page, recommendations and messages.
  */
 export function createSeed(): MockDb {
@@ -20,9 +19,9 @@ export function createSeed(): MockDb {
   ];
 
   return {
-    version: 1,
+    version: 2,
     sessionUserId: null,
-    users: users.map((u) => ({ ...u, password: MOCK_PASSWORD })),
+    users,
     events: [
       {
         id: 'e-family',
@@ -58,6 +57,8 @@ export function createSeed(): MockDb {
         userId: u.id,
         displayName: u.displayName,
         joinedAt: iso(-10 + i),
+        profileCompleted: u.displayName === 'Bob' || u.displayName === 'Carol',
+        exclusionsConfirmed: false,
       })),
       ...users.slice(0, 3).map((u, i) => ({
         id: `p-office-${u.displayName.toLowerCase()}`,
@@ -65,23 +66,34 @@ export function createSeed(): MockDb {
         userId: u.id,
         displayName: u.displayName,
         joinedAt: iso(-20 + i),
+        profileCompleted: true,
+        exclusionsConfirmed: true,
       })),
     ],
     invitations: [],
-    exclusions: [
-      {
-        id: 'x-1',
-        eventId: 'e-family',
-        participantA: 'p-family-carol',
-        participantB: 'p-family-dave',
-      },
-    ],
+    exclusions: [],
     assignments: [
       { id: 'a-1', eventId: 'e-office', giverId: 'p-office-alice', receiverId: 'p-office-carol' },
       { id: 'a-2', eventId: 'e-office', giverId: 'p-office-carol', receiverId: 'p-office-bob' },
       { id: 'a-3', eventId: 'e-office', giverId: 'p-office-bob', receiverId: 'p-office-alice' },
     ],
     questionnaires: [
+      {
+        participantId: 'p-family-bob',
+        interests: ['board-games', 'coffee', 'music'],
+        giftStyles: ['fun', 'practical'],
+        avoid: ['clothing'],
+        sizes: '',
+        notes: 'Just got into vinyl records.',
+      },
+      {
+        participantId: 'p-family-carol',
+        interests: ['plants', 'reading', 'tea'],
+        giftStyles: ['cosy', 'eco'],
+        avoid: ['alcohol'],
+        sizes: 'Sweaters: M',
+        notes: '',
+      },
       {
         participantId: 'p-office-carol',
         interests: ['coffee', 'reading', 'plants'],

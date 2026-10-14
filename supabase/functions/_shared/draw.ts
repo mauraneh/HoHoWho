@@ -10,7 +10,7 @@ export interface DrawPair {
   receiverId: string;
 }
 
-/** A pair of participants who must not draw each other (in either direction). */
+/** `[giverId, receiverId]`: this giver must not draw this receiver (one direction only). */
 export type ExclusionPair = readonly [string, string];
 
 export class DrawImpossibleError extends Error {
@@ -41,7 +41,7 @@ function shuffle<T>(items: T[], random: () => number): T[] {
 
 /**
  * Assigns every participant exactly one receiver so that nobody draws themselves
- * and no excluded pair is matched. Uses randomized backtracking that always expands
+ * and no giver is matched with someone they excluded. Uses randomized backtracking that always expands
  * the giver with the fewest remaining options first, which handles dense exclusion sets.
  *
  * @throws DrawImpossibleError when no valid assignment exists.
@@ -60,9 +60,8 @@ export function drawAssignments(
   }
 
   const forbidden = new Map<string, Set<string>>(ids.map((id) => [id, new Set([id])]));
-  for (const [a, b] of exclusions) {
-    forbidden.get(a)?.add(b);
-    forbidden.get(b)?.add(a);
+  for (const [giver, receiver] of exclusions) {
+    forbidden.get(giver)?.add(receiver);
   }
 
   const candidates = new Map<string, string[]>(

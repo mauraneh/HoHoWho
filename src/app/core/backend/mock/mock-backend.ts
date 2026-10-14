@@ -1,11 +1,10 @@
 import { signal } from '@angular/core';
-import { DrawImpossibleError, drawAssignments } from '@shared/draw';
+import { DrawImpossibleError, drawAssignments, MIN_PARTICIPANTS } from '@shared/draw';
 import {
   AppUser,
   CreatedInvitation,
   EventDetail,
   EventSummary,
-  Exclusion,
   GifteeProfile,
   InvitationPreview,
   Message,
@@ -15,11 +14,11 @@ import {
   ThreadRole,
   WishlistItem,
 } from '../../models';
-import { BackendError, HohowhoBackend, SignUpResult } from '../hohowho-backend';
+import { BackendError, HohowhoBackend, SignInLinkResult } from '../hohowho-backend';
 import { MockDb } from './mock-db';
 import { createSeed } from './mock-seed';
 
-export const MOCK_STORAGE_KEY = 'hohowho.mock-db.v1';
+export const MOCK_STORAGE_KEY = 'hohowho.mock-db.v2';
 const INVITATION_DAYS = 14;
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -67,7 +66,7 @@ export class MockBackend extends HohowhoBackend {
       const raw = this.storage.getItem(MOCK_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as MockDb;
-        if (parsed.version === 1) return parsed;
+        if (parsed.version === 2) return parsed;
       }
     } catch {
       // Corrupted or unavailable storage: fall back to the seed.
@@ -112,7 +111,7 @@ export class MockBackend extends HohowhoBackend {
     const event = this.event(eventId);
     if (event.ownerId !== this.uid()) throw new BackendError('You are not allowed to do this.');
     if (event.status !== 'open') {
-      throw new BackendError('This is no longer possible once names have been drawn.');
+      throw new BackendError('This is only possible while the list is open.');
     }
     return event;
   }
@@ -142,38 +141,36 @@ export class MockBackend extends HohowhoBackend {
     );
     const event = invitation && this.db.events.find((e) => e.id === invitation.eventId);
     if (!invitation || !event || event.status !== 'open') {
-      throw new BackendError('This invitation is invalid or has expired');
+      throw new BackendError(
+        'This invitation is invalid, has expired, or the list is already closed',
+      );
     }
     return event;
   }
 
   // --- auth ------------------------------------------------------------------------------------
 
-  signUp(email: string, password: string, displayName: string): Promise<SignUpResult> {
+  /** Demo mode has no e-mail: the "link" signs the user in immediately. */
+  requestSignInLink(email: string, displayName: string): Promise<SignInLinkResult> {
     return this.tick(() => {
       const normalized = email.trim().toLowerCase();
-      if (this.db.users.some((u) => u.email === normalized)) {
-        throw new BackendError('User already registered');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+        throw new BackendError('Please enter a valid e-mail address.');
       }
-      if (password.length < 6) throw new BackendError('Password should be at least 6 characters.');
-      const id = crypto.randomUUID();
-      const name = displayName.trim() || normalized.split('@')[0];
-      this.db.users.push({ id, email: normalized, password, displayName: name.slice(0, 60) });
-      this.db.sessionUserId = id;
+      let user = this.db.users.find((u) => u.email === normalized);
+      if (!user) {
+        const name = (displayName.trim() || normalized.split('@')[0]).slice(0, 60);
+        user = { id: crypto.randomUUID(), email: normalized, displayName: name };
+        this.db.users.push(user);
+      }
+      this.db.sessionUserId = user.id;
       this.syncUser();
-      return { needsEmailConfirmation: false };
+      return { signedIn: true };
     });
   }
 
-  signIn(email: string, password: string): Promise<void> {
-    return this.tick(() => {
-      const user = this.db.users.find(
-        (u) => u.email === email.trim().toLowerCase() && u.password === password,
-      );
-      if (!user) throw new BackendError('Invalid login credentials');
-      this.db.sessionUserId = user.id;
-      this.syncUser();
-    });
+  consumeAuthError(): string | null {
+    return null;
   }
 
   signOut(): Promise<void> {
@@ -228,6 +225,8 @@ export class MockBackend extends HohowhoBackend {
         userId: uid,
         displayName: this.user()!.displayName,
         joinedAt: now(),
+        profileCompleted: false,
+        exclusionsConfirmed: false,
       });
       return id;
     });
@@ -285,7 +284,7 @@ export class MockBackend extends HohowhoBackend {
       }
       this.db.participants = this.db.participants.filter((p) => p.id !== participantId);
       this.db.exclusions = this.db.exclusions.filter(
-        (x) => x.participantA !== participantId && x.participantB !== participantId,
+        (x) => x.giverId !== participantId && x.excludedId !== participantId,
       );
       this.db.questionnaires = this.db.questionnaires.filter(
         (q) => q.participantId !== participantId,
@@ -328,7 +327,6 @@ export class MockBackend extends HohowhoBackend {
 
   previewInvitation(token: string): Promise<InvitationPreview> {
     return this.tick(() => {
-      this.uid();
       const event = this.findInvitation(token);
       const owner = this.db.users.find((u) => u.id === event.ownerId);
       return {
@@ -352,6 +350,8 @@ export class MockBackend extends HohowhoBackend {
           userId: uid,
           displayName: this.user()!.displayName,
           joinedAt: now(),
+          profileCompleted: false,
+          exclusionsConfirmed: false,
         });
       }
       return event.id;
@@ -360,54 +360,101 @@ export class MockBackend extends HohowhoBackend {
 
   // --- exclusions and draw ---------------------------------------------------------------------
 
-  listExclusions(eventId: string): Promise<Exclusion[]> {
+  closeRegistrations(eventId: string): Promise<void> {
     return this.tick(() => {
-      if (this.event(eventId).ownerId !== this.uid()) return [];
-      return this.db.exclusions.filter((x) => x.eventId === eventId);
-    });
-  }
-
-  addExclusion(eventId: string, participantA: string, participantB: string): Promise<void> {
-    return this.tick(() => {
-      this.ownedOpenEvent(eventId);
-      const inEvent = (id: string) =>
-        this.db.participants.some((p) => p.id === id && p.eventId === eventId);
-      if (participantA === participantB || !inEvent(participantA) || !inEvent(participantB)) {
-        throw new BackendError('Some values are invalid. Please check the form.');
+      const event = this.ownedOpenEvent(eventId);
+      if (this.db.participants.filter((p) => p.eventId === eventId).length < MIN_PARTICIPANTS) {
+        throw new BackendError(`At least ${MIN_PARTICIPANTS} participants are required`);
       }
-      const duplicate = this.db.exclusions.some(
-        (x) =>
-          x.eventId === eventId &&
-          ((x.participantA === participantA && x.participantB === participantB) ||
-            (x.participantA === participantB && x.participantB === participantA)),
-      );
-      if (duplicate) throw new BackendError('This already exists.');
-      this.db.exclusions.push({ id: crypto.randomUUID(), eventId, participantA, participantB });
+      event.status = 'exclusions';
     });
   }
 
-  removeExclusion(exclusionId: string): Promise<void> {
+  reopenRegistrations(eventId: string): Promise<void> {
     return this.tick(() => {
-      const exclusion = this.db.exclusions.find((x) => x.id === exclusionId);
-      if (!exclusion) throw new BackendError('This exclusion can no longer be removed.');
-      this.ownedOpenEvent(exclusion.eventId);
-      this.db.exclusions = this.db.exclusions.filter((x) => x.id !== exclusionId);
+      const event = this.event(eventId);
+      if (event.ownerId !== this.uid()) throw new BackendError('You are not allowed to do this.');
+      if (event.status !== 'exclusions') {
+        throw new BackendError('The list can only be reopened before the draw');
+      }
+      this.db.exclusions = this.db.exclusions.filter((x) => x.eventId !== eventId);
+      for (const p of this.db.participants) {
+        if (p.eventId === eventId) p.exclusionsConfirmed = false;
+      }
+      event.status = 'open';
+    });
+  }
+
+  getParticipantEmails(eventId: string): Promise<string[]> {
+    return this.tick(() => {
+      if (this.event(eventId).ownerId !== this.uid()) {
+        throw new BackendError('Only the organiser can see e-mail addresses');
+      }
+      const userIds = this.db.participants
+        .filter((p) => p.eventId === eventId)
+        .map((p) => p.userId);
+      return this.db.users.filter((u) => userIds.includes(u.id)).map((u) => u.email);
+    });
+  }
+
+  getMyExclusions(eventId: string): Promise<string[]> {
+    return this.tick(() => {
+      const me = this.myParticipant(eventId);
+      return this.db.exclusions.filter((x) => x.giverId === me.id).map((x) => x.excludedId);
+    });
+  }
+
+  submitExclusions(
+    eventId: string,
+    excludedIds: string[],
+  ): Promise<{ everyoneConfirmed: boolean }> {
+    return this.tick(() => {
+      const event = this.event(eventId);
+      const me = this.myParticipant(eventId);
+      if (event.status !== 'exclusions') {
+        throw new BackendError(
+          'Exclusions can only be chosen after the list is closed and before the draw',
+        );
+      }
+      const members = this.db.participants.filter((p) => p.eventId === eventId);
+      const unique = [...new Set(excludedIds)];
+      if (unique.includes(me.id)) throw new BackendError('You cannot exclude yourself');
+      if (unique.length > members.length - 2) {
+        throw new BackendError('Leave at least one person you could give a gift to');
+      }
+      if (!unique.every((id) => members.some((p) => p.id === id))) {
+        throw new BackendError('Unknown participant');
+      }
+      this.db.exclusions = this.db.exclusions.filter((x) => x.giverId !== me.id);
+      for (const excludedId of unique)
+        this.db.exclusions.push({ eventId, giverId: me.id, excludedId });
+      me.exclusionsConfirmed = true;
+      return { everyoneConfirmed: members.every((p) => p.exclusionsConfirmed) };
     });
   }
 
   drawNames(eventId: string): Promise<void> {
     return this.tick(() => {
       const event = this.event(eventId);
-      if (event.ownerId !== this.uid()) throw new BackendError('Only the organiser can draw names');
-      if (event.status !== 'open') {
+      if (event.status === 'drawn') {
         throw new BackendError('Names have already been drawn for this event');
       }
-      const ids = this.db.participants.filter((p) => p.eventId === eventId).map((p) => p.id);
+      if (event.status !== 'exclusions') {
+        throw new BackendError('The organiser must close the list first');
+      }
+      const members = this.db.participants.filter((p) => p.eventId === eventId);
+      const waiting = members.filter((p) => !p.exclusionsConfirmed).length;
+      if (event.ownerId !== this.uid() && waiting > 0) {
+        throw new BackendError(`Waiting for ${waiting} participant(s) to validate`);
+      }
       const exclusions = this.db.exclusions
         .filter((x) => x.eventId === eventId)
-        .map((x) => [x.participantA, x.participantB] as const);
+        .map((x) => [x.giverId, x.excludedId] as const);
       try {
-        for (const pair of drawAssignments(ids, exclusions)) {
+        for (const pair of drawAssignments(
+          members.map((p) => p.id),
+          exclusions,
+        )) {
           this.db.assignments.push({ id: crypto.randomUUID(), eventId, ...pair });
         }
       } catch (error) {
@@ -417,6 +464,11 @@ export class MockBackend extends HohowhoBackend {
       event.status = 'drawn';
       event.drawnAt = now();
     });
+  }
+
+  private myParticipant(eventId: string) {
+    this.event(eventId);
+    return this.db.participants.find((p) => p.eventId === eventId && p.userId === this.uid())!;
   }
 
   // --- giftee, questionnaire, wishlist ---------------------------------------------------------
@@ -453,6 +505,8 @@ export class MockBackend extends HohowhoBackend {
         (q) => q.participantId !== participantId,
       );
       this.db.questionnaires.push({ ...clone(questionnaire), participantId });
+      const participant = this.db.participants.find((p) => p.id === participantId);
+      if (participant) participant.profileCompleted = true;
     });
   }
 

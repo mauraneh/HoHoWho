@@ -13,14 +13,15 @@ major_version = 17
 # Local development URL. In production, set Site URL and Redirect URLs in the dashboard
 # (Authentication → URL Configuration) to your GitHub Pages URL.
 site_url = "http://localhost:4200"
-additional_redirect_urls = ["http://localhost:4200", "http://127.0.0.1:4200"]
+additional_redirect_urls = ["http://localhost:4200/**", "http://127.0.0.1:4200/**"]
 minimum_password_length = 8
 
 [auth.email]
 enable_signup = true
-# Confirmation e-mails are captured by the local Inbucket/Mailpit server during development.
-enable_confirmations = true
+# Magic-link e-mails are captured by the local mail viewer during development.
+enable_confirmations = false
 
 [functions.draw-assignments]
-# The function authenticates the caller from the JWT itself (see index.ts).
-verify_jwt = true
+# The function authenticates the caller itself (auth.getUser in index.ts). The gateway's legacy
+# JWT check is disabled because it rejects tokens signed with Supabase's new asymmetric keys.
+verify_jwt = false

@@ -8,18 +8,18 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 
 ## Features
 
-| Feature                  | How it works                                                                                                                                                                                                                                                         |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Accounts                 | E-mail and password through Supabase Auth (PKCE flow).                                                                                                                                                                                                               |
-| Events                   | Name, description, date, budget range and currency. The organiser can delete the event.                                                                                                                                                                              |
-| Secure invitations       | Each link carries a random 256-bit token. Only its SHA-256 hash is stored. Links expire after 14 days and can be revoked. They stop working once names are drawn.                                                                                                    |
-| Exclusions               | Pairs who must not draw each other, for example couples.                                                                                                                                                                                                             |
-| Draw                     | The `draw-assignments` Edge Function draws names with a CSPRNG and backtracking, so it respects exclusions. It saves the result atomically, and the database checks it again.                                                                                        |
-| Privacy of assignments   | Row Level Security lets each person read only the assignment where they are the giver. Nobody, not even the organiser, can see the full list.                                                                                                                        |
-| Questionnaire & wishlist | Interests, preferred kinds of gifts, things to avoid, sizes and notes, plus wishlist items. Only the author and their Secret Santa can read them.                                                                                                                    |
-| Gift ideas               | A deterministic, rule-based recommender. It scores a curated catalogue against the questionnaire, keywords found in the notes and wishlist, the things to avoid and the budget, and explains each suggestion. It is pluggable, so an AI provider can be added later. |
-| Anonymous messages       | Each giftee has one thread with their Santa. Messages store no sender, only a "from Santa" flag.                                                                                                                                                                     |
-| Demo mode                | In development everything runs in the browser with seeded demo data. No account or network is needed.                                                                                                                                                                |
+| Feature                    | How it works                                                                                                                                                                                                                                                                                                                                        |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Accounts without passwords | Name + e-mail only: Supabase Auth e-mails a one-click magic link that works on any device. The account is created on first use.                                                                                                                                                                                                                     |
+| Events                     | Name, description, date, budget range and currency. The organiser can delete the event.                                                                                                                                                                                                                                                             |
+| Secure invitations         | Each link carries a random 256-bit token. Only its SHA-256 hash is stored. Links expire after 14 days, can be revoked, and stop working once the list is closed. Anyone with the link can see the event name before entering their e-mail.                                                                                                          |
+| Three-step flow            | **1. Join & wishes:** people open the link and fill in the questionnaire. **2. Exclusions:** the organiser closes the list; each person privately picks who they'd rather not give a gift to (nobody else can see it), then validates. **3. Draw:** names are drawn automatically when the last person validates (the organiser can also force it). |
+| Draw                       | The `draw-assignments` Edge Function draws names with a CSPRNG and backtracking, so it respects every personal exclusion. It saves the result atomically, and the database checks it again.                                                                                                                                                         |
+| Privacy of assignments     | Row Level Security lets each person read only the assignment where they are the giver. Nobody, not even the organiser, can see the full list.                                                                                                                                                                                                       |
+| Questionnaire & wishlist   | Interests, preferred kinds of gifts, things to avoid, sizes and notes, plus wishlist items. Only the author and their Secret Santa can read them.                                                                                                                                                                                                   |
+| Gift ideas                 | A deterministic, rule-based recommender. It scores a curated catalogue against the questionnaire, keywords found in the notes and wishlist, the things to avoid and the budget, and explains each suggestion. It is pluggable, so an AI provider can be added later.                                                                                |
+| Anonymous messages         | Each giftee has one thread with their Santa. Messages store no sender, only a "from Santa" flag.                                                                                                                                                                                                                                                    |
+| Demo mode                  | In development everything runs in the browser with seeded demo data. No account or network is needed.                                                                                                                                                                                                                                               |
 
 ## Architecture
 
@@ -27,7 +27,7 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 ┌──────────────────────────┐   HTTPS (anon key + user JWT)   ┌──────────────────────────────┐
 │ Angular SPA (static)     │ ──────────────────────────────▶ │ Supabase Free                │
 │ GitHub Pages / any CDN   │   PostgREST · Auth · Functions  │  Postgres + RLS + RPCs       │
-│                          │                                 │  Auth (e-mail/password)      │
+│                          │                                 │  Auth (e-mail magic link)    │
 │ HohowhoBackend contract  │                                 │  Edge Function: draw names   │
 │  ├─ SupabaseBackend      │                                 └──────────────────────────────┘
 │  └─ MockBackend (dev)    │
@@ -45,6 +45,7 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 - RLS is enabled on every table, and the default Supabase grants are revoked. `authenticated` gets explicit per-column privileges. `anon` gets nothing.
 - Writes that must be atomic or need elevated rights go through `SECURITY DEFINER` functions that check `auth.uid()`: `create_event`, `create_invitation`, `preview_invitation` and `accept_invitation`.
 - `apply_draw` can only be executed by `service_role`, which means only by the Edge Function. It locks the event and checks again that the draw is complete, that nobody draws themselves and that no exclusion is broken.
+- Exclusions are personal and private: `submit_exclusions` writes them, and RLS lets each person read only their own. The organiser only sees who has validated, never what they chose. `close_registrations` and `reopen_registrations` move the event between phases and are organiser-only.
 - The browser only ever holds the public **anon/publishable key**. The `service_role` key exists only inside Supabase Edge Functions. `scripts/write-runtime-config.mjs` refuses to write a service-role key into `config.json`.
 - `supabase/tests/rls_test.sql` checks these rules: outsiders, non-owners, a fake Santa, a fake receiver, direct inserts, a draw replayed twice and so on. CI runs it against a real PostgreSQL server.
 
@@ -84,9 +85,9 @@ pnpm install
 pnpm start            # http://localhost:4200
 ```
 
-The app runs entirely in your browser with demo data stored in `localStorage`. Demo accounts are `alice@example.com`, `bob@example.com`, `carol@example.com` and `dave@example.com`, all with the password `password123`. You can also create your own accounts.
+The app runs entirely in your browser with demo data stored in `localStorage`. Sign in with `alice@example.com`, `bob@example.com`, `carol@example.com`, `dave@example.com` or any other e-mail: in demo mode no e-mail is sent and you are signed in instantly.
 
-- **Family Christmas** is open and organised by Alice. Use it to try invitations, exclusions and the draw. Sign in as another user and open the invitation link to join.
+- **Family Christmas** is open and organised by Alice. Use it to try the invitation link, closing the list, exclusions and the automatic draw. Sign out and open the invitation link to join as someone new.
 - **Office Party** has already been drawn. Use it to try the giftee page, gift ideas and messages. Alice is Carol's Santa.
 - **Reset demo data** in the footer restores the seed.
 
@@ -106,7 +107,7 @@ supabase functions serve      # serves draw-assignments locally
 pnpm start:supabase
 ```
 
-Confirmation e-mails sent by the local stack appear in the local mail viewer printed by `supabase start`.
+Magic-link e-mails sent by the local stack appear in the local mail viewer printed by `supabase start`.
 
 ## Commands
 
@@ -157,10 +158,10 @@ npx serve dist/hohowho/browser    # any static file server works
 3. Deploy the Edge Function with `supabase functions deploy draw-assignments --project-ref <ref>`, or let CI do it. `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by Supabase.
 4. Under **Authentication → URL Configuration**:
    - Set **Site URL** to `https://<owner>.github.io/<repo>/`.
-   - Add the same URL to **Redirect URLs**, plus `http://localhost:4200` for local development.
+   - Add `https://<owner>.github.io/<repo>/**` to **Redirect URLs** (the `**` lets sign-in links bring people back to their invitation), plus `http://localhost:4200/**` for local development.
 5. Copy the **Project URL** and the **anon/publishable key** from **Project Settings → API**.
 
-> **E-mail on the free plan:** Supabase's built-in e-mail sender is rate-limited to a few messages per hour. For a small group that's fine. If people hit the limit, you have two options: under **Authentication → Providers → Email**, either disable "Confirm email" so accounts work immediately, or plug in any free SMTP provider. No paid e-mail service is required.
+> **E-mail (required for magic links):** Supabase's built-in e-mail sender only delivers to the members of your Supabase team and a few messages per hour, so your friends won't receive their sign-in links with it. Plug in a free SMTP provider under **Project Settings → Authentication → SMTP Settings**. For example, [Brevo](https://www.brevo.com) is free for 300 e-mails a day without a credit card: create an account, verify your sender address, then copy the SMTP host `smtp-relay.brevo.com`, port `587`, login and SMTP key into Supabase. Gmail with an app password also works. No paid e-mail service is required.
 
 ### 2. Enable GitHub Pages
 
@@ -217,18 +218,18 @@ To extend the catalogue, edit `src/app/recommendations/gift-catalog.ts`. A unit 
 
 ## Troubleshooting
 
-| Symptom                                                   | Fix                                                                                                                                                                     |
-| --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "HoHoWho could not start: Could not load config.json"     | Production builds need `config.json` next to `index.html`. Locally, run `pnpm config:write`. In CI, set the `SUPABASE_URL` and `SUPABASE_ANON_KEY` variables.           |
-| Blank page or 404 for JS files on GitHub Pages            | Wrong base href. It must match the repository path (`/<repo>/`, case-sensitive) or be `/` with a custom domain. Set `BASE_HREF` if needed.                              |
-| Pages job fails with "Get Pages site failed"              | Enable Pages with **Source: GitHub Actions** (step 2).                                                                                                                  |
-| "GitHub Pages deployment skipped" warning in CI           | Add the repository **variables** `SUPABASE_URL` and `SUPABASE_ANON_KEY`, then re-run the workflow. Until then CI still checks everything but does not publish the site. |
-| Confirmation e-mail never arrives / "rate limit exceeded" | Free-tier e-mail limits. Wait an hour, disable "Confirm email", or configure a free SMTP provider.                                                                      |
-| Confirmation link opens but you're not signed in          | The link must open in the same browser that created the account (PKCE). Check that the GitHub Pages URL is in **Redirect URLs**, then sign in with your password.       |
-| "Could not reach the draw service"                        | Deploy the function (`supabase functions deploy draw-assignments`). Check its logs in the dashboard. If you set `ALLOWED_ORIGINS`, it must include your site's origin.  |
-| "No valid draw exists with the current exclusions"        | The exclusions leave no possible assignment. Remove some of them.                                                                                                       |
-| "You are not allowed to do this."                         | An RLS or privilege check refused the action. For example, only the organiser can invite or draw, and nothing can be changed after the draw.                            |
-| Requests fail after a few quiet days                      | Supabase Free pauses inactive projects. Restore the project from the dashboard.                                                                                         |
-| `pnpm install` fails in CI with a lockfile error          | Run `pnpm install` locally and commit the updated `pnpm-lock.yaml`.                                                                                                     |
-| Angular CLI says the Node.js version is unsupported       | Use Node 24 (or ≥ 22.22.3).                                                                                                                                             |
-| Demo data looks odd in development                        | Click **Reset demo data** in the footer, or clear the site's `localStorage`.                                                                                            |
+| Symptom                                               | Fix                                                                                                                                                                     |
+| ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "HoHoWho could not start: Could not load config.json" | Production builds need `config.json` next to `index.html`. Locally, run `pnpm config:write`. In CI, set the `SUPABASE_URL` and `SUPABASE_ANON_KEY` variables.           |
+| Blank page or 404 for JS files on GitHub Pages        | Wrong base href. It must match the repository path (`/<repo>/`, case-sensitive) or be `/` with a custom domain. Set `BASE_HREF` if needed.                              |
+| Pages job fails with "Get Pages site failed"          | Enable Pages with **Source: GitHub Actions** (step 2).                                                                                                                  |
+| "GitHub Pages deployment skipped" warning in CI       | Add the repository **variables** `SUPABASE_URL` and `SUPABASE_ANON_KEY`, then re-run the workflow. Until then CI still checks everything but does not publish the site. |
+| Sign-in e-mail never arrives / "rate limit exceeded"  | Configure a free SMTP provider (see Deployment, step 1). Supabase's built-in sender only reaches your Supabase team members. Also check the spam folder.                |
+| Sign-in link opens the site but you're not signed in  | The link may have expired or been used already: request a new one. Check that `https://<owner>.github.io/<repo>/**` is in **Redirect URLs**.                            |
+| "Could not reach the draw service"                    | Deploy the function (`supabase functions deploy draw-assignments`). Check its logs in the dashboard. If you set `ALLOWED_ORIGINS`, it must include your site's origin.  |
+| "No valid draw exists with the current exclusions"    | The exclusions leave no possible assignment. Remove some of them.                                                                                                       |
+| "You are not allowed to do this."                     | An RLS or privilege check refused the action. For example, only the organiser can invite or draw, and nothing can be changed after the draw.                            |
+| Requests fail after a few quiet days                  | Supabase Free pauses inactive projects. Restore the project from the dashboard.                                                                                         |
+| `pnpm install` fails in CI with a lockfile error      | Run `pnpm install` locally and commit the updated `pnpm-lock.yaml`.                                                                                                     |
+| Angular CLI says the Node.js version is unsupported   | Use Node 24 (or ≥ 22.22.3).                                                                                                                                             |
+| Demo data looks odd in development                    | Click **Reset demo data** in the footer, or clear the site's `localStorage`.                                                                                            |

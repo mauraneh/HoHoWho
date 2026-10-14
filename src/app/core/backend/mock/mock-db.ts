@@ -1,14 +1,15 @@
-import { Exclusion, GiftEvent, Participant, Questionnaire, WishlistItem } from '../../models';
+import { GiftEvent, Participant, Questionnaire, WishlistItem } from '../../models';
 
 /** Shape of the local development database persisted in localStorage. */
 export interface MockDb {
-  version: 1;
+  version: 2;
   sessionUserId: string | null;
-  users: { id: string; email: string; password: string; displayName: string }[];
+  users: { id: string; email: string; displayName: string }[];
   events: GiftEvent[];
   participants: Participant[];
   invitations: { id: string; eventId: string; token: string; expiresAt: string }[];
-  exclusions: Exclusion[];
+  /** giverId does not want to give a gift to excludedId. */
+  exclusions: { eventId: string; giverId: string; excludedId: string }[];
   assignments: { id: string; eventId: string; giverId: string; receiverId: string }[];
   questionnaires: (Questionnaire & { participantId: string })[];
   wishlistItems: WishlistItem[];

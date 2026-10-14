@@ -12,44 +12,83 @@ import { Router, RouterLink } from '@angular/router';
 import { HohowhoBackend } from '../../core/backend/hohowho-backend';
 import { errorMessage } from '../../core/format';
 import { InvitationPreview } from '../../core/models';
+import { SignInForm } from '../auth/sign-in-form';
 
+/** Invitation landing page: works signed out (asks for an e-mail) and signed in (one click). */
 @Component({
   selector: 'app-join-page',
-  imports: [RouterLink, DatePipe],
+  imports: [RouterLink, DatePipe, SignInForm],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container narrow">
-      <div class="card join">
-        @if (error(); as e) {
+      @if (error(); as e) {
+        <div class="card invite">
+          <div class="big-icon" aria-hidden="true">🔒</div>
           <h1>Invitation unavailable</h1>
-          <div class="alert alert-error" role="alert">{{ e }}</div>
-          <p class="muted">Ask the organiser for a new invitation link.</p>
+          <p class="muted">{{ e }}</p>
+          <p class="muted small">Ask the organiser for a new link.</p>
           <a routerLink="/events" class="btn">Go to my events</a>
-        } @else if (preview(); as p) {
-          <p class="muted">{{ p.ownerName }} invites you to</p>
-          <h1>🎄 {{ p.eventName }}</h1>
+        </div>
+      } @else if (preview(); as p) {
+        <div class="card card-night invite">
+          <div class="snow" aria-hidden="true"></div>
+          <span class="eyebrow">{{ p.ownerName }} invites you to</span>
+          <h1>{{ p.eventName }}</h1>
           @if (p.eventDate) {
-            <p class="muted">{{ p.eventDate | date: 'fullDate' }}</p>
+            <p class="muted">🎄 {{ p.eventDate | date: 'fullDate' }}</p>
           }
-          @if (p.alreadyMember) {
-            <p>You are already taking part.</p>
-            <a [routerLink]="['/events', p.eventId]" class="btn btn-primary">Open event</a>
+        </div>
+
+        <div class="card">
+          @if (!user()) {
+            <h2>Join in 1 minute</h2>
+            <p class="muted small">
+              Enter your name and e-mail. You'll then tell your Secret Santa what you'd like.
+            </p>
+            <app-sign-in-form
+              [next]="'/join/' + token()"
+              submitLabel="Join the Secret Santa 🎁"
+              (signedIn)="load(token())"
+            />
+          } @else if (p.alreadyMember) {
+            <h2>You're in! 🎉</h2>
+            <p class="muted">You're already taking part.</p>
+            <a [routerLink]="['/events', p.eventId]" class="btn btn-primary">Open the event</a>
           } @else {
-            <p>Join the Secret Santa to receive your giftee when names are drawn.</p>
-            <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="join()">
-              {{ busy() ? 'Joining…' : 'Join the Secret Santa' }}
+            <h2>Hi {{ user()!.displayName }} 👋</h2>
+            <p class="muted">Join, then tell your Secret Santa what kind of gift you'd love.</p>
+            <button
+              type="button"
+              class="btn btn-primary btn-lg btn-block"
+              [disabled]="busy()"
+              (click)="join()"
+            >
+              {{ busy() ? 'Joining…' : 'Join the Secret Santa 🎁' }}
             </button>
           }
-        } @else {
-          <p class="muted">Checking your invitation…</p>
-        }
-      </div>
+        </div>
+      } @else {
+        <p class="muted center">Opening your invitation…</p>
+      }
     </div>
   `,
   styles: `
-    .join {
+    .invite {
+      position: relative;
       text-align: center;
-      margin-top: 2rem;
+      margin-top: 1rem;
+      padding: 2.25rem 1.5rem;
+    }
+    .invite h1 {
+      font-size: clamp(2rem, 6vw, 2.8rem);
+      margin: 0.5rem 0;
+      position: relative;
+    }
+    .big-icon {
+      font-size: 2.5rem;
+    }
+    .center {
+      text-align: center;
     }
   `,
 })
@@ -60,6 +99,7 @@ export class JoinPage {
   /** Route parameter `:token`. */
   readonly token = input.required<string>();
 
+  protected readonly user = this.backend.currentUser;
   protected readonly preview = signal<InvitationPreview | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -71,7 +111,7 @@ export class JoinPage {
     });
   }
 
-  private async load(token: string): Promise<void> {
+  async load(token: string): Promise<void> {
     this.error.set(null);
     try {
       this.preview.set(await this.backend.previewInvitation(token));
