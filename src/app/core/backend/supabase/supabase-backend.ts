@@ -23,7 +23,10 @@ import {
   ThreadRole,
   WishlistItem,
 } from '../../models';
-import { BackendError, HohowhoBackend, SignInLinkResult } from '../hohowho-backend';
+import { BackendError, HohowhoBackend, PersonalKey } from '../hohowho-backend';
+
+/** Synthetic e-mail domain of personal-link accounts (must match the personal-access function). */
+const GUEST_DOMAIN = 'guest.hohowho.app';
 
 type Row = Record<string, unknown>;
 
@@ -93,21 +96,6 @@ function toUser(user: User): AppUser {
   };
 }
 
-function friendlyAuthError(error: { message: string; status?: number; code?: string }): string {
-  const message = error.message ?? '';
-  if (error.status === 429 || /rate limit/i.test(message)) {
-    return 'Too many sign-in e-mails were sent. Please wait a few minutes and try again.';
-  }
-  if (/email/i.test(message) && /(valid|format)/i.test(message)) {
-    return 'Please enter a valid e-mail address.';
-  }
-  if (/expired|invalid/i.test(message)) {
-    return 'This sign-in link has expired or was already used. Request a new one below.';
-  }
-  console.error(error);
-  return 'We could not send the sign-in link. Please try again.';
-}
-
 /** Converts database errors into messages that are safe to display. */
 function fail(error: PostgrestError | { message: string; code?: string }): never {
   switch (error.code) {
@@ -141,48 +129,17 @@ export class SupabaseBackend extends HohowhoBackend {
   private readonly ready: Promise<void>;
   readonly currentUser = this.user.asReadonly();
 
-  private authError: string | null = null;
-
   constructor(config: RuntimeConfig) {
     super();
     this.client = createClient(config.supabaseUrl, config.supabaseAnonKey, {
-      auth: {
-        // Implicit flow: the e-mailed link signs in on any device or browser (PKCE would require
-        // opening it in the browser that requested it). The tokens arrive in the URL fragment and
-        // are consumed before the router starts (see createBackend).
-        flowType: 'implicit',
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-      },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
     });
     this.client.auth.onAuthStateChange((_event, session) => {
       this.user.set(session?.user ? toUser(session.user) : null);
     });
-    this.ready = this.client.auth.getSession().then(({ data, error }) => {
+    this.ready = this.client.auth.getSession().then(({ data }) => {
       this.user.set(data.session?.user ? toUser(data.session.user) : null);
-      this.cleanAuthFragment();
-      if (error && !this.authError) this.authError = friendlyAuthError(error);
     });
-  }
-
-  /** Removes auth tokens or errors left in the URL fragment so the router never sees them. */
-  private cleanAuthFragment(): void {
-    const fragment = window.location.hash.replace(/^#/, '');
-    if (!/(^|&)(access_token|error|error_code|error_description)=/.test(fragment)) return;
-    const description = new URLSearchParams(fragment).get('error_description');
-    if (description) this.authError = friendlyAuthError({ message: description });
-    window.history.replaceState(
-      window.history.state,
-      '',
-      window.location.pathname + window.location.search,
-    );
-  }
-
-  consumeAuthError(): string | null {
-    const error = this.authError;
-    this.authError = null;
-    return error;
   }
 
   whenReady(): Promise<void> {
@@ -195,25 +152,58 @@ export class SupabaseBackend extends HohowhoBackend {
     return user;
   }
 
-  async requestSignInLink(
-    email: string,
-    displayName: string,
-    next: string,
-  ): Promise<SignInLinkResult> {
-    const redirect = new URL(document.baseURI);
-    redirect.hash = '';
-    if (next && next !== '/events') redirect.searchParams.set('next', next);
-    const name = displayName.trim();
-    const { error } = await this.client.auth.signInWithOtp({
-      email: email.trim(),
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: redirect.toString(),
-        data: name ? { display_name: name } : undefined,
-      },
+  /** Calls the personal-access Edge Function and returns the issued personal key. */
+  private async personalAccess(body: Record<string, unknown>): Promise<PersonalKey> {
+    const { data, error } = await this.client.functions.invoke('personal-access', { body });
+    if (error) {
+      if (error instanceof FunctionsHttpError) {
+        const payload = await (error.context as Response).json().catch(() => null);
+        throw new BackendError(payload?.error ?? 'Something went wrong');
+      }
+      console.error(error);
+      throw new BackendError('Could not reach the server');
+    }
+    return (data as { key: string }).key;
+  }
+
+  async joinWithInvitation(displayName: string, invitationToken: string): Promise<PersonalKey> {
+    const key = await this.personalAccess({
+      action: 'join',
+      name: displayName,
+      invitation: invitationToken,
     });
-    if (error) throw new BackendError(friendlyAuthError(error));
-    return { signedIn: false };
+    await this.signInWithKey(key);
+    return key;
+  }
+
+  async signUpAsOrganizer(displayName: string, code: string): Promise<PersonalKey> {
+    const key = await this.personalAccess({ action: 'organizer', name: displayName, code });
+    await this.signInWithKey(key);
+    return key;
+  }
+
+  async signInWithKey(key: PersonalKey): Promise<void> {
+    const [account, secret] = key.trim().split('.');
+    if (!/^g[0-9a-f]{16}$/.test(account ?? '') || !/^[0-9a-f]{48}$/.test(secret ?? '')) {
+      throw new BackendError('This personal link is not valid');
+    }
+    const { error } = await this.client.auth.signInWithPassword({
+      email: `${account}@${GUEST_DOMAIN}`,
+      password: secret,
+    });
+    if (error) {
+      throw new BackendError(
+        error.status === 429 ? 'Too many attempts' : 'This personal link is not valid',
+      );
+    }
+  }
+
+  resetMyKey(): Promise<PersonalKey> {
+    return this.personalAccess({ action: 'reset' });
+  }
+
+  resetParticipantKey(participantId: string): Promise<PersonalKey> {
+    return this.personalAccess({ action: 'reset', participantId });
   }
 
   async signOut(): Promise<void> {

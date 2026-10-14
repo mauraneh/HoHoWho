@@ -9,12 +9,11 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { formatBudget } from '../../core/format';
-import { Corners, Divider } from '../../shared/ornaments';
 import { EventStore } from './event-store';
 
 @Component({
   selector: 'app-event-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe, Corners, Divider],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
   providers: [EventStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -26,30 +25,22 @@ import { EventStore } from './event-store';
       }
 
       @if (store.detail(); as d) {
-        <header class="card card-night banner">
-          <div class="snow" aria-hidden="true"></div>
-          <app-corners />
-          <div class="banner-body">
-            <span class="script banner-kicker">Secret Santa</span>
-            <h1>{{ d.event.name }}</h1>
-            <app-divider />
-            <div class="meta">
-              <span>{{
-                d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date à définir'
-              }}</span>
-              <span aria-hidden="true">✦</span>
-              <span>{{ budget() }}</span>
-              <span aria-hidden="true">✦</span>
-              <span
-                >{{ d.participants.length }} participant{{
-                  d.participants.length === 1 ? '' : 's'
-                }}</span
-              >
-            </div>
-            @if (d.event.description) {
-              <p class="description">{{ d.event.description }}</p>
-            }
+        <header class="banner">
+          <h1>{{ d.event.name }}</h1>
+          <div class="meta">
+            <span>{{
+              d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date à définir'
+            }}</span>
+            <span>{{ budget() }}</span>
+            <span
+              >{{ d.participants.length }} participant{{
+                d.participants.length === 1 ? '' : 's'
+              }}</span
+            >
           </div>
+          @if (d.event.description) {
+            <p class="description">{{ d.event.description }}</p>
+          }
         </header>
 
         <nav class="tabs" aria-label="Sections">
@@ -80,57 +71,40 @@ import { EventStore } from './event-store';
   styles: `
     .back {
       display: inline-block;
-      margin-bottom: 0.9rem;
-      font-family: var(--font-caps);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      color: var(--snow-soft);
+      font-size: 0.9rem;
+      font-weight: 600;
       text-decoration: none;
     }
+    .back:hover {
+      color: var(--white);
+    }
     .banner {
-      overflow: hidden;
-      padding: 2.4rem 2rem 2.2rem;
-      text-align: center;
-    }
-    .banner-body {
-      position: relative;
-    }
-    .banner-kicker {
-      display: block;
-      font-size: 2.2rem;
-      line-height: 1;
-      color: var(--gold-light);
+      margin: 1.5rem 0 2rem;
     }
     .banner h1 {
-      margin: 0.3rem 0 0;
-      font-size: clamp(2.2rem, 6vw, 3.2rem);
-    }
-    .banner app-divider {
-      margin: 0.6rem auto;
+      font-size: clamp(2.8rem, 9vw, 5.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      margin: 0 0 1rem;
     }
     .meta {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
-      gap: 0.6rem;
-      font-family: var(--font-caps);
-      font-size: 0.78rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: rgb(247 240 225 / 85%);
+      gap: 0.4rem 1.4rem;
+      font-weight: 600;
+      color: var(--snow-soft);
     }
-    .meta span[aria-hidden] {
-      color: var(--gold);
+    .meta span + span::before {
+      content: '·';
+      margin-right: 1.4rem;
+      color: var(--red);
     }
     .description {
       max-width: 40rem;
-      margin: 1rem auto 0;
+      margin: 1rem 0 0;
       white-space: pre-line;
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      font-style: italic;
-      color: rgb(247 240 225 / 85%);
+      color: var(--snow-soft);
     }
     .dot {
       display: inline-block;
@@ -138,7 +112,7 @@ import { EventStore } from './event-store';
       height: 8px;
       margin-left: 0.3rem;
       border-radius: 50%;
-      background: var(--crimson);
+      background: var(--red);
       vertical-align: middle;
     }
   `,

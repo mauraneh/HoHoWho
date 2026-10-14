@@ -5,12 +5,15 @@ const iso = (offsetDays: number) => new Date(Date.now() + offsetDays * day).toIS
 const date = (offsetDays: number) => iso(offsetDays).slice(0, 10);
 
 /**
- * Demo data for local development. Sign in with any of the demo e-mail addresses.
- * Alice and Bob are organisers (they can create events); everyone else joins via invitations.
+ * Demo data for local development. Sign in with the demo personal links (#/k/demo-alice…)
+ * or the organiser code MOCK_ORGANIZER_CODE. Alice and Bob are organisers.
  * - "Family Christmas" is open (Alice organises): try invitations, closing the list,
  *   exclusions and the draw (Bob and Carol already filled in their wishes).
  * - "Office Party" is already drawn: try the giftee page, recommendations and messages.
  */
+/** Organiser code accepted by the demo backend. */
+export const MOCK_ORGANIZER_CODE = 'noel';
+
 export function createSeed(): MockDb {
   const users = [
     { id: 'u-alice', email: 'alice@example.com', displayName: 'Alice' },
@@ -20,10 +23,10 @@ export function createSeed(): MockDb {
   ];
 
   return {
-    version: 3,
+    version: 4,
     organizers: ['alice@example.com', 'bob@example.com'],
     sessionUserId: null,
-    users,
+    users: users.map((u) => ({ ...u, key: `demo-${u.displayName.toLowerCase()}` })),
     events: [
       {
         id: 'e-family',

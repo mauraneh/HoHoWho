@@ -1,111 +1,102 @@
 /*
- * HoHoWho design system: "Victorian Christmas".
- * Deep emerald, crimson and antique gold on ivory paper; gold line ornaments, calligraphic
- * titles (Great Vibes), engraved capitals (Cinzel), book serif (Cormorant Garamond) and a clean
- * sans (DM Sans) for forms. All fonts are self-hosted via Fontsource. No UI library.
+ * HoHoWho design system: minimal winter night.
+ * A deep night background with falling snow (app-snowfall), very large bold titles, plain white
+ * cards and a single red accent. One typeface (DM Sans, self-hosted via Fontsource).
  */
 :root {
-  --emerald: #173d2c;
-  --emerald-deep: #0f2b1f;
-  --emerald-light: #2a5c43;
-  --crimson: #a0182a;
-  --crimson-dark: #7a1020;
-  --gold: #c9a25a;
-  --gold-light: #e6cd8e;
-  --gold-pale: #f3e6c4;
-  --ivory: #f7f0e1;
-  --paper: #fffaf0;
-  --ink: #2b1d16;
-  --muted: #6e5d50;
-  --line: #e2d3b4;
-  --mint: #e2efe6;
-  --danger-bg: #f8e3e3;
-  --radius: 6px;
-  --shadow: 0 1px 2px rgb(43 29 22 / 8%), 0 12px 28px -14px rgb(43 29 22 / 30%);
-  --shadow-lift: 0 2px 4px rgb(43 29 22 / 10%), 0 22px 40px -18px rgb(43 29 22 / 45%);
-  /* Double gold rule used on framed cards. */
-  --gold-rule:
-    inset 0 0 0 1px var(--gold), inset 0 0 0 5px var(--paper), inset 0 0 0 6px var(--gold-light);
-  --font-script: 'Great Vibes', 'Brush Script MT', cursive;
-  --font-caps: 'Cinzel Variable', 'Trajan Pro', Georgia, serif;
-  --font-serif: 'Cormorant Garamond Variable', Garamond, Georgia, serif;
-  --font-text: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color-scheme: light;
+  --night: #0b1622;
+  --night-2: #12233a;
+  --white: #ffffff;
+  --snow-soft: rgb(255 255 255 / 72%);
+  --red: #e2373f;
+  --red-dark: #b8232b;
+  --green: #1f8a5b;
+  --ink: #14202b;
+  --muted: #5f6b76;
+  --line: #e6e9ee;
+  --soft: #f4f6f8;
+  --mint: #e7f6ee;
+  --danger-bg: #fdecec;
+  --radius: 18px;
+  --shadow: 0 20px 50px -24px rgb(0 0 0 / 55%);
+  --font: 'DM Sans Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+
+  /* Legacy token names used by components, mapped onto the minimal palette. */
+  --emerald: var(--ink);
+  --emerald-deep: var(--night);
+  --emerald-light: var(--night-2);
+  --crimson: var(--red);
+  --crimson-dark: var(--red-dark);
+  --gold: var(--red);
+  --gold-light: var(--white);
+  --gold-pale: #fde8e8;
+  --ivory: var(--white);
+  --paper: var(--white);
+  --font-script: var(--font);
+  --font-caps: var(--font);
+  --font-serif: var(--font);
+  --font-text: var(--font);
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
+html {
+  background: var(--night);
+}
+
 html,
 body {
   margin: 0;
-  color: var(--ink);
-  font-family: var(--font-text);
+  font-family: var(--font);
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 
-/*
- * Night-time emerald wall with a faint gold damask; snow falls on top (app-snowfall) and the
- * ivory "paper" cards sit in front of it.
- */
 body {
-  color: var(--ivory);
-  background-color: var(--emerald-deep);
-  background-image:
-    radial-gradient(circle at 50% 50%, rgb(201 162 90 / 7%) 0 1.5px, transparent 2.5px),
-    radial-gradient(ellipse at 50% -10%, rgb(42 92 67 / 90%), transparent 60%),
-    radial-gradient(ellipse at 100% 100%, rgb(122 16 32 / 35%), transparent 50%),
-    linear-gradient(180deg, var(--emerald) 0%, var(--emerald-deep) 70%, #0a1f16 100%);
-  background-size:
-    32px 32px,
-    100% 100%,
-    100% 100%,
-    100% 100%;
-  background-attachment: fixed;
+  color: var(--white);
+  background: radial-gradient(ellipse at 50% -20%, var(--night-2), var(--night) 60%) no-repeat;
+  background-size: 100% 100vh;
   min-height: 100vh;
 }
 
 a {
-  color: var(--gold-light);
+  color: var(--white);
   text-underline-offset: 3px;
-}
-
-.card a {
-  color: var(--crimson);
 }
 
 h1,
 h2,
 h3 {
-  font-family: var(--font-serif);
-  font-weight: 700;
-  line-height: 1.1;
-  margin: 0 0 0.7rem;
-  color: var(--gold-light);
-}
-
-.card {
-  color: var(--ink);
-}
-
-.card h1,
-.card h2,
-.card h3 {
-  color: var(--emerald);
+  font-family: var(--font);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  margin: 0 0 0.6rem;
+  color: var(--white);
 }
 
 h1 {
-  font-size: clamp(2rem, 5vw, 2.9rem);
+  font-size: clamp(2.6rem, 7vw, 4.6rem);
 }
 
 h2 {
-  font-size: 1.6rem;
+  font-size: clamp(1.4rem, 3vw, 1.8rem);
+  letter-spacing: -0.025em;
 }
 
 h3 {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
+/* Extra-large display titles. */
+.display {
+  font-size: clamp(3.4rem, 11vw, 7.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.05em;
 }
 
 p {
@@ -113,40 +104,32 @@ p {
 }
 
 code {
-  background: var(--gold-pale);
+  background: var(--soft);
+  color: var(--ink);
   padding: 0.05rem 0.35rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.88em;
 }
 
-.script {
-  font-family: var(--font-script);
-  font-weight: 400;
-  letter-spacing: 0;
-}
-
-.caps,
-.eyebrow {
-  font-family: var(--font-caps);
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
+.script,
+.caps {
+  font-family: var(--font);
 }
 
 .eyebrow {
   display: inline-block;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--gold);
-}
-
-.card .eyebrow {
-  color: var(--crimson);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--red);
 }
 
 .container {
-  max-width: 1040px;
+  position: relative;
+  max-width: 980px;
   margin: 0 auto;
-  padding: 1.75rem 1rem 3rem;
+  padding: 2rem 1.25rem 3rem;
 }
 
 .narrow {
@@ -158,34 +141,46 @@ code {
   text-align: center;
 }
 
-/* Cards: ivory paper with a double gold rule. */
+.muted {
+  color: var(--snow-soft);
+}
+
+.small {
+  font-size: 0.875rem;
+}
+
+/* Cards: plain white. */
 .card {
   position: relative;
-  background: var(--paper);
+  color: var(--ink);
+  background: var(--white);
   border-radius: var(--radius);
-  box-shadow: var(--gold-rule), var(--shadow);
+  box-shadow: var(--shadow);
   padding: 1.6rem 1.7rem;
   margin-bottom: 1.25rem;
 }
 
-/* Dark emerald panel (banners, giftee reveal). */
-.card-night {
-  color: var(--ivory);
-  background:
-    radial-gradient(circle at 20% 0%, rgb(201 162 90 / 18%), transparent 45%),
-    radial-gradient(circle at 100% 100%, rgb(160 24 42 / 30%), transparent 45%),
-    repeating-linear-gradient(45deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 10px),
-    linear-gradient(160deg, var(--emerald) 0%, var(--emerald-deep) 100%);
-  box-shadow:
-    inset 0 0 0 1px var(--gold),
-    inset 0 0 0 6px var(--emerald-deep),
-    inset 0 0 0 7px rgb(201 162 90 / 55%),
-    var(--shadow);
+.card h1,
+.card h2,
+.card h3 {
+  color: var(--ink);
 }
 
+.card a {
+  color: var(--red);
+}
+
+.card .muted {
+  color: var(--muted);
+}
+
+/* Dark / accent panels are flattened into the night (kept for older markup). */
 .card-night,
 .card-crimson {
-  --muted: rgb(247 240 225 / 75%);
+  color: var(--white);
+  background: rgb(255 255 255 / 6%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 12%);
+  backdrop-filter: blur(6px);
 }
 
 .card-night h1,
@@ -194,30 +189,12 @@ code {
 .card-crimson h1,
 .card-crimson h2,
 .card-crimson h3 {
-  color: var(--ivory);
+  color: var(--white);
 }
 
-.card-night .muted {
-  color: rgb(247 240 225 / 75%);
-}
-
-.card-night .eyebrow,
-.card-crimson .eyebrow {
-  color: var(--gold-light);
-}
-
-/* Crimson panel (advent-calendar door). */
-.card-crimson {
-  color: var(--ivory);
-  background:
-    linear-gradient(90deg, rgb(0 0 0 / 12%) 1px, transparent 1px),
-    linear-gradient(180deg, #ad2032 0%, var(--crimson-dark) 100%);
-  background-size:
-    33% 100%,
-    100% 100%;
-  box-shadow:
-    inset 0 0 0 1px rgb(201 162 90 / 70%),
-    var(--shadow);
+.card-night .muted,
+.card-crimson .muted {
+  color: var(--snow-soft);
 }
 
 .grid {
@@ -241,49 +218,30 @@ code {
   justify-content: space-between;
 }
 
-.muted {
-  color: rgb(247 240 225 / 72%);
-}
-
-.card .muted {
-  color: var(--muted);
-}
-
-.small {
-  font-size: 0.875rem;
-}
-
-/* Buttons: engraved capitals, crimson with a gold inner rule. */
+/* Buttons */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  border: 1px solid var(--gold);
-  background: var(--paper);
-  color: var(--emerald);
-  border-radius: 4px;
-  padding: 0.65rem 1.2rem;
-  font-family: var(--font-caps);
-  font-size: 0.82rem;
+  border: 1.5px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 0.65rem 1.25rem;
+  font: inherit;
   font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
   cursor: pointer;
   text-decoration: none;
   transition:
     transform 0.12s ease,
-    box-shadow 0.12s ease,
-    background 0.12s ease;
+    background 0.12s ease,
+    border-color 0.12s ease;
 }
 
 .btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px -8px rgb(43 29 22 / 50%);
-}
-
-.btn:active:not(:disabled) {
-  transform: translateY(0);
+  border-color: var(--ink);
 }
 
 .btn:disabled {
@@ -291,52 +249,43 @@ code {
   cursor: not-allowed;
 }
 
-.btn-primary {
-  color: var(--ivory);
-  border-color: var(--crimson-dark);
-  background: linear-gradient(180deg, #b8253a 0%, var(--crimson) 55%, var(--crimson-dark) 100%);
-  box-shadow:
-    inset 0 0 0 2px var(--crimson),
-    inset 0 0 0 3px var(--gold-light);
+.btn-primary,
+.btn-gold {
+  color: var(--white) !important;
+  border-color: var(--red);
+  background: var(--red);
 }
 
-.btn-primary:hover:not(:disabled) {
-  box-shadow:
-    inset 0 0 0 2px var(--crimson),
-    inset 0 0 0 3px var(--gold-light),
-    0 8px 18px -8px rgb(122 16 32 / 70%);
+.btn-primary:hover:not(:disabled),
+.btn-gold:hover:not(:disabled) {
+  background: var(--red-dark);
+  border-color: var(--red-dark);
 }
 
 .btn-green {
-  color: var(--ivory);
-  border-color: var(--emerald-deep);
-  background: linear-gradient(180deg, var(--emerald-light) 0%, var(--emerald) 100%);
-  box-shadow:
-    inset 0 0 0 2px var(--emerald),
-    inset 0 0 0 3px rgb(230 205 142 / 70%);
+  color: var(--white) !important;
+  border-color: var(--ink);
+  background: var(--ink);
 }
 
-.btn-gold {
-  color: var(--emerald-deep);
-  border-color: #a8833f;
-  background: linear-gradient(180deg, #f0d99b 0%, var(--gold) 100%);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 50%);
+.btn-green:hover:not(:disabled) {
+  background: #000;
 }
 
 .btn-danger {
-  color: var(--crimson);
-  border-color: #dcaaa9;
-  background: var(--paper);
+  color: var(--red);
+  border-color: #f3c6c8;
+  background: var(--white);
 }
 
 .btn-sm {
-  padding: 0.35rem 0.8rem;
-  font-size: 0.72rem;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.85rem;
 }
 
 .btn-lg {
-  padding: 0.85rem 1.6rem;
-  font-size: 0.9rem;
+  padding: 0.9rem 1.7rem;
+  font-size: 1.05rem;
 }
 
 .btn-block {
@@ -348,19 +297,19 @@ code {
   border: none;
   padding: 0;
   font: inherit;
-  color: var(--gold-light);
+  color: var(--white);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 
 .card .link-btn {
-  color: var(--crimson);
+  color: var(--red);
 }
 
 :focus-visible {
-  outline: 2px solid var(--gold);
-  outline-offset: 3px;
+  outline: 3px solid rgb(226 55 63 / 55%);
+  outline-offset: 2px;
 }
 
 /* Forms */
@@ -373,12 +322,9 @@ code {
 
 .field label,
 .field legend {
-  font-family: var(--font-caps);
-  font-weight: 600;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--emerald);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--ink);
 }
 
 .field .hint {
@@ -388,7 +334,7 @@ code {
 
 .field .error,
 .error {
-  color: var(--crimson);
+  color: var(--red);
   font-size: 0.82rem;
 }
 
@@ -396,23 +342,23 @@ input,
 select,
 textarea {
   font: inherit;
-  padding: 0.7rem 0.85rem;
-  border: 1px solid #d8c69f;
-  border-radius: 4px;
-  background: #fffdf7;
+  padding: 0.75rem 0.9rem;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--soft);
   color: var(--ink);
   width: 100%;
   transition:
     border-color 0.12s ease,
-    box-shadow 0.12s ease;
+    background 0.12s ease;
 }
 
 input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--gold);
-  box-shadow: 0 0 0 3px rgb(201 162 90 / 25%);
+  border-color: var(--ink);
+  background: var(--white);
 }
 
 textarea {
@@ -422,7 +368,7 @@ textarea {
 
 input.ng-invalid.ng-touched,
 textarea.ng-invalid.ng-touched {
-  border-color: var(--crimson);
+  border-color: var(--red);
 }
 
 fieldset {
@@ -447,6 +393,11 @@ fieldset {
   position: relative;
 }
 
+.field .chip-toggle {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
 .chip-toggle input {
   position: absolute;
   opacity: 0;
@@ -454,44 +405,29 @@ fieldset {
   height: 1px;
 }
 
-.field .chip-toggle {
-  font-family: var(--font-text);
-  font-size: 0.9rem;
-  font-weight: 400;
-  letter-spacing: normal;
-  text-transform: none;
-  color: var(--ink);
-}
-
 .chip-toggle span {
   display: inline-block;
-  padding: 0.35rem 0.85rem;
-  border: 1px solid var(--line);
+  padding: 0.4rem 0.9rem;
+  border: 1.5px solid var(--line);
   border-radius: 999px;
-  background: #fffdf7;
+  background: var(--white);
   cursor: pointer;
-  font-size: 0.9rem;
   transition: all 0.12s ease;
 }
 
 .chip-toggle span:hover {
-  border-color: var(--gold);
+  border-color: var(--ink);
 }
 
 .chip-toggle input:checked + span {
-  background: var(--emerald);
-  border-color: var(--gold);
-  color: var(--ivory);
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--white);
   font-weight: 700;
 }
 
-.chip-toggle input:checked + span::before {
-  content: '✦ ';
-  color: var(--gold-light);
-}
-
 .chip-toggle input:focus-visible + span {
-  outline: 2px solid var(--gold);
+  outline: 3px solid rgb(226 55 63 / 55%);
   outline-offset: 2px;
 }
 
@@ -500,49 +436,46 @@ fieldset {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.12rem 0.6rem;
+  padding: 0.15rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  background: #efe5d0;
+  background: var(--soft);
   color: var(--muted);
   white-space: nowrap;
 }
 
 .badge-green {
   background: var(--mint);
-  color: var(--emerald);
+  color: var(--green);
 }
 
 .badge-red {
   background: var(--danger-bg);
-  color: var(--crimson);
+  color: var(--red);
 }
 
 .badge-gold {
-  background: var(--gold-pale);
-  color: #7c5a1c;
+  background: #fff3e0;
+  color: #a35b00;
 }
 
 .alert {
   color: var(--ink);
-  border-radius: 4px;
+  border-radius: 12px;
   padding: 0.8rem 1rem;
   margin-bottom: 1rem;
-  background: #efe5d0;
-  border-left: 3px solid var(--gold);
+  background: var(--soft);
 }
 
 .alert-error {
   background: var(--danger-bg);
-  color: var(--crimson-dark);
-  border-left-color: var(--crimson);
+  color: var(--red-dark);
 }
 
 .alert-success {
   background: var(--mint);
-  color: var(--emerald);
-  border-left-color: var(--emerald-light);
+  color: var(--green);
 }
 
 .list {
@@ -566,24 +499,17 @@ fieldset {
   width: 2.2rem;
   height: 2.2rem;
   border-radius: 50%;
-  background: var(--emerald);
-  color: var(--gold-light);
-  box-shadow: inset 0 0 0 1px var(--gold);
-  font-family: var(--font-caps);
+  background: var(--ink);
+  color: var(--white);
   font-weight: 700;
   font-size: 0.85rem;
   margin-right: 0.65rem;
   flex: none;
 }
 
-.card.empty {
-  color: var(--muted);
-}
-
 .empty {
   text-align: center;
   padding: 2.5rem 1rem;
-  color: var(--muted);
 }
 
 .empty-icon {
@@ -592,27 +518,20 @@ fieldset {
   margin-bottom: 0.5rem;
 }
 
-/* Section tabs (event page): a paper strip with a gold rule. */
+/* Section tabs (event page): simple underlined links on the night background. */
 .tabs {
   display: flex;
-  gap: 0.25rem;
+  gap: 1.5rem;
   overflow-x: auto;
-  margin-bottom: 1.25rem;
-  padding: 0 0.5rem;
-  background: var(--paper);
-  border-radius: var(--radius);
-  box-shadow: var(--gold-rule), var(--shadow);
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid rgb(255 255 255 / 15%);
   scrollbar-width: none;
 }
 
 .tabs a {
-  padding: 0.65rem 1.1rem;
-  color: var(--muted);
-  font-family: var(--font-caps);
-  font-size: 0.78rem;
+  padding: 0.7rem 0;
+  color: var(--snow-soft);
   font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
   border-bottom: 3px solid transparent;
@@ -620,46 +539,12 @@ fieldset {
 }
 
 .tabs a:hover {
-  color: var(--emerald);
+  color: var(--white);
 }
 
 .tabs a.active {
-  color: var(--crimson);
-  border-bottom-color: var(--crimson);
-}
-
-/* Falling snow for dark sections (decorative). */
-.snow {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    radial-gradient(2px 2px at 20px 30px, #fff 50%, transparent 51%),
-    radial-gradient(2px 2px at 140px 80px, rgb(255 255 255 / 80%) 50%, transparent 51%),
-    radial-gradient(3px 3px at 90px 150px, rgb(255 255 255 / 70%) 50%, transparent 51%),
-    radial-gradient(2px 2px at 200px 200px, #fff 50%, transparent 51%),
-    radial-gradient(1.5px 1.5px at 60px 220px, rgb(255 255 255 / 90%) 50%, transparent 51%);
-  background-size: 240px 240px;
-  opacity: 0.4;
-  animation: snowfall 22s linear infinite;
-}
-
-@keyframes snowfall {
-  from {
-    background-position: 0 0;
-  }
-  to {
-    background-position: 60px 240px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .snow {
-    animation: none;
-  }
-  * {
-    transition: none !important;
-  }
+  color: var(--white);
+  border-bottom-color: var(--red);
 }
 
 .fatal-error {
@@ -667,9 +552,9 @@ fieldset {
   margin: 4rem auto;
   padding: 1.5rem;
   background: var(--danger-bg);
-  color: var(--crimson-dark);
+  color: var(--red-dark);
   border-radius: var(--radius);
-  font-family: var(--font-text);
+  font-family: var(--font);
 }
 
 .visually-hidden {
@@ -679,4 +564,10 @@ fieldset {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
 }

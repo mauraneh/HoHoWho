@@ -8,54 +8,82 @@ import {
   signal,
   untracked,
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HohowhoBackend } from '../../core/backend/hohowho-backend';
 import { errorMessage } from '../../core/format';
 import { InvitationPreview } from '../../core/models';
-import { BowRibbon, Corners, Divider } from '../../shared/ornaments';
-import { SignInForm } from '../auth/sign-in-form';
+import { rememberKey } from '../../core/personal-link';
+import { PersonalLinkCard } from '../../shared/personal-link-card';
 
-/** Invitation landing page: works signed out (asks for an e-mail) and signed in (one click). */
+/**
+ * Invitation landing page. Signed out: a first name is enough, the account is created and the
+ * person receives their personal link. Signed in: one click to join.
+ */
 @Component({
   selector: 'app-join-page',
-  imports: [RouterLink, DatePipe, SignInForm, BowRibbon, Corners, Divider],
+  imports: [RouterLink, DatePipe, FormsModule, PersonalLinkCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container narrow">
       @if (error(); as e) {
-        <div class="card invite">
-          <div class="big-icon" aria-hidden="true">🔒</div>
+        <div class="card">
           <h1>Invitation indisponible</h1>
           <p class="muted">{{ e }}</p>
           <p class="muted small">Demandez un nouveau lien à l’organisateur.</p>
           <a routerLink="/events" class="btn">Mes Secret Santa</a>
         </div>
       } @else if (preview(); as p) {
-        <div class="card card-night invite">
-          <div class="snow" aria-hidden="true"></div>
-          <app-corners />
-          <span class="script kicker">Vous êtes invité·e</span>
-          <span class="eyebrow">{{ p.ownerName }} vous invite au Secret Santa</span>
+        <header class="invite">
+          <span class="eyebrow">{{ p.ownerName }} vous invite</span>
           <h1>{{ p.eventName }}</h1>
-          <app-divider />
           @if (p.eventDate) {
-            <p class="muted caps date">{{ p.eventDate | date: 'fullDate' }}</p>
+            <p class="muted date">{{ p.eventDate | date: 'fullDate' }}</p>
           }
-        </div>
-        <app-bow-ribbon class="ribbon" />
+        </header>
 
         <div class="card">
-          @if (!user()) {
+          @if (welcomeKey(); as key) {
+            <h2>Bienvenue {{ user()?.displayName }} ! 🎉</h2>
+            <p class="muted">
+              Vous participez au Secret Santa. Voici votre lien personnel : envoyez-le-vous (sur
+              WhatsApp par exemple) pour revenir plus tard, sur ce téléphone ou un autre.
+            </p>
+            <app-personal-link-card [key]="key" />
+            <button type="button" class="btn btn-primary btn-lg btn-block" (click)="continue(p)">
+              Remplir mes envies
+            </button>
+          } @else if (!user()) {
             <h2>Rejoindre en 1 minute</h2>
             <p class="muted small">
-              Indiquez votre prénom et votre e-mail. Vous direz ensuite à votre Père Noël secret ce
-              qui vous ferait plaisir.
+              Juste votre prénom : pas d’e-mail, pas de mot de passe. Vous direz ensuite à votre
+              Père Noël secret ce qui vous ferait plaisir.
             </p>
-            <app-sign-in-form
-              [next]="'/join/' + token()"
-              submitLabel="Rejoindre le Secret Santa 🎁"
-              (signedIn)="load(token())"
-            />
+            <form (ngSubmit)="joinAsNewcomer()">
+              <div class="field">
+                <label for="displayName">Votre prénom</label>
+                <input
+                  id="displayName"
+                  name="displayName"
+                  [(ngModel)]="name"
+                  maxlength="60"
+                  autocomplete="given-name"
+                  placeholder="ex. Camille"
+                />
+                <span class="hint">Visible par les autres participants.</span>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-primary btn-lg btn-block"
+                [disabled]="busy() || !name.trim()"
+              >
+                {{ busy() ? 'Un instant…' : 'Rejoindre le Secret Santa 🎁' }}
+              </button>
+            </form>
+            <p class="muted small already">
+              Vous avez déjà votre lien personnel&nbsp;? Ouvrez-le d’abord, puis revenez sur cette
+              invitation.
+            </p>
           } @else if (p.alreadyMember) {
             <h2>Vous en êtes ! 🎉</h2>
             <p class="muted">Vous participez déjà.</p>
@@ -76,6 +104,9 @@ import { SignInForm } from '../auth/sign-in-form';
               {{ busy() ? 'Inscription…' : 'Rejoindre le Secret Santa 🎁' }}
             </button>
           }
+          @if (formError(); as e) {
+            <div class="alert alert-error" role="alert">{{ e }}</div>
+          }
         </div>
       } @else {
         <p class="muted center">Ouverture de votre invitation…</p>
@@ -84,40 +115,26 @@ import { SignInForm } from '../auth/sign-in-form';
   `,
   styles: `
     .invite {
-      overflow: hidden;
-      text-align: center;
-      margin: 1rem 0 0;
-      padding: 2.6rem 1.75rem 2.2rem;
-    }
-    .invite > :not(app-corners, .snow) {
-      position: relative;
-    }
-    .invite .eyebrow {
-      display: block;
-    }
-    .kicker {
-      display: block;
-      font-size: 2.6rem;
-      line-height: 1;
-      color: var(--gold-light);
-      margin-bottom: 0.4rem;
+      margin: 2rem 0 2rem;
     }
     .invite h1 {
-      font-size: clamp(2.2rem, 7vw, 3rem);
-      margin: 0.5rem 0 0;
+      font-size: clamp(2.8rem, 10vw, 4.8rem);
+      line-height: 0.95;
+      letter-spacing: -0.05em;
+      margin: 0.5rem 0 0.6rem;
     }
     .date {
-      font-size: 0.8rem;
       margin: 0;
+      font-weight: 600;
     }
-    .ribbon {
-      margin: -0.4rem -1rem 0.6rem;
+    .card h1 {
+      font-size: 2rem;
     }
-    .big-icon {
-      font-size: 2.5rem;
+    .already {
+      margin: 1rem 0 0;
     }
-    .center {
-      text-align: center;
+    .alert {
+      margin: 1rem 0 0;
     }
   `,
 })
@@ -132,6 +149,10 @@ export class JoinPage {
   protected readonly preview = signal<InvitationPreview | null>(null);
   protected readonly busy = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly formError = signal<string | null>(null);
+  /** Personal key of a newly created account, shown once after joining. */
+  protected readonly welcomeKey = signal<string | null>(null);
+  protected name = '';
 
   constructor() {
     effect(() => {
@@ -140,7 +161,7 @@ export class JoinPage {
     });
   }
 
-  async load(token: string): Promise<void> {
+  private async load(token: string): Promise<void> {
     this.error.set(null);
     try {
       this.preview.set(await this.backend.previewInvitation(token));
@@ -149,13 +170,34 @@ export class JoinPage {
     }
   }
 
+  /** New person: create the account, join, then show the personal link. */
+  async joinAsNewcomer(): Promise<void> {
+    await this.run(async () => {
+      const key = await this.backend.joinWithInvitation(this.name, this.token());
+      rememberKey(key);
+      await this.backend.acceptInvitation(this.token());
+      this.welcomeKey.set(key);
+    });
+  }
+
   async join(): Promise<void> {
-    this.busy.set(true);
-    try {
+    await this.run(async () => {
       const eventId = await this.backend.acceptInvitation(this.token());
       await this.router.navigate(['/events', eventId, 'wishes']);
+    });
+  }
+
+  continue(preview: InvitationPreview): void {
+    void this.router.navigate(['/events', preview.eventId, 'wishes']);
+  }
+
+  private async run(action: () => Promise<void>): Promise<void> {
+    this.busy.set(true);
+    this.formError.set(null);
+    try {
+      await action();
     } catch (e) {
-      this.error.set(errorMessage(e));
+      this.formError.set(errorMessage(e));
     } finally {
       this.busy.set(false);
     }

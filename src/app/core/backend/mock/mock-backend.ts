@@ -14,11 +14,11 @@ import {
   ThreadRole,
   WishlistItem,
 } from '../../models';
-import { BackendError, HohowhoBackend, SignInLinkResult } from '../hohowho-backend';
+import { BackendError, HohowhoBackend, PersonalKey } from '../hohowho-backend';
 import { MockDb } from './mock-db';
-import { createSeed } from './mock-seed';
+import { createSeed, MOCK_ORGANIZER_CODE } from './mock-seed';
 
-export const MOCK_STORAGE_KEY = 'hohowho.mock-db.v3';
+export const MOCK_STORAGE_KEY = 'hohowho.mock-db.v4';
 const INVITATION_DAYS = 14;
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -66,7 +66,7 @@ export class MockBackend extends HohowhoBackend {
       const raw = this.storage.getItem(MOCK_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as MockDb;
-        if (parsed.version === 3) return parsed;
+        if (parsed.version === 4) return parsed;
       }
     } catch {
       // Corrupted or unavailable storage: fall back to the seed.
@@ -150,27 +150,61 @@ export class MockBackend extends HohowhoBackend {
 
   // --- auth ------------------------------------------------------------------------------------
 
-  /** Demo mode has no e-mail: the "link" signs the user in immediately. */
-  requestSignInLink(email: string, displayName: string): Promise<SignInLinkResult> {
+  private createAccount(displayName: string): { id: string; email: string; key: PersonalKey } {
+    const name = displayName.trim().replace(/\s+/g, ' ');
+    if (!name || name.length > 60) throw new BackendError('Please enter your first name');
+    const id = crypto.randomUUID();
+    const user = { id, email: `${id}@guest.hohowho.app`, displayName: name, key: randomToken() };
+    this.db.users.push(user);
+    this.db.sessionUserId = id;
+    this.syncUser();
+    return user;
+  }
+
+  joinWithInvitation(displayName: string, invitationToken: string): Promise<PersonalKey> {
     return this.tick(() => {
-      const normalized = email.trim().toLowerCase();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
-        throw new BackendError('Please enter a valid e-mail address.');
-      }
-      let user = this.db.users.find((u) => u.email === normalized);
-      if (!user) {
-        const name = (displayName.trim() || normalized.split('@')[0]).slice(0, 60);
-        user = { id: crypto.randomUUID(), email: normalized, displayName: name };
-        this.db.users.push(user);
-      }
-      this.db.sessionUserId = user.id;
-      this.syncUser();
-      return { signedIn: true };
+      this.findInvitation(invitationToken);
+      return this.createAccount(displayName).key;
     });
   }
 
-  consumeAuthError(): string | null {
-    return null;
+  signUpAsOrganizer(displayName: string, code: string): Promise<PersonalKey> {
+    return this.tick(() => {
+      if (code.trim() !== MOCK_ORGANIZER_CODE) throw new BackendError('Wrong organiser code');
+      const user = this.createAccount(displayName);
+      if (this.db.organizers.length) this.db.organizers.push(user.email);
+      return user.key;
+    });
+  }
+
+  signInWithKey(key: PersonalKey): Promise<void> {
+    return this.tick(() => {
+      const user = this.db.users.find((u) => u.key === key.trim());
+      if (!user) throw new BackendError('This personal link is not valid');
+      this.db.sessionUserId = user.id;
+      this.syncUser();
+    });
+  }
+
+  resetMyKey(): Promise<PersonalKey> {
+    return this.tick(() => {
+      const user = this.db.users.find((u) => u.id === this.uid())!;
+      user.key = randomToken();
+      return user.key;
+    });
+  }
+
+  resetParticipantKey(participantId: string): Promise<PersonalKey> {
+    return this.tick(() => {
+      const participant = this.db.participants.find((p) => p.id === participantId);
+      const event = participant && this.db.events.find((e) => e.id === participant.eventId);
+      if (!participant || event?.ownerId !== this.uid()) {
+        throw new BackendError('Only the organiser can do this');
+      }
+      const user = this.db.users.find((u) => u.id === participant.userId)!;
+      user.key = randomToken();
+      return user.key;
+    });
   }
 
   signOut(): Promise<void> {

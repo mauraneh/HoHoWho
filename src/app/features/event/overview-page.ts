@@ -11,15 +11,16 @@ import {
 import { Router } from '@angular/router';
 import { MIN_PARTICIPANTS } from '@shared/draw';
 import { HohowhoBackend } from '../../core/backend/hohowho-backend';
-import { appUrl, errorMessage, initials, mailtoLink } from '../../core/format';
+import { appUrl, errorMessage, initials } from '../../core/format';
 import { CreatedInvitation, EventDetail, Participant } from '../../core/models';
+import { PersonalLinkCard } from '../../shared/personal-link-card';
 import { EventStore } from './event-store';
 
 type Step = 'done' | 'current' | 'todo';
 
 @Component({
   selector: 'app-overview-page',
-  imports: [DatePipe],
+  imports: [DatePipe, PersonalLinkCard],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (store.detail(); as d) {
@@ -33,7 +34,7 @@ type Step = 'done' | 'current' | 'todo';
       <ol class="stepper card" aria-label="Étapes">
         @for (s of steps(); track s.title) {
           <li [class]="s.state">
-            <span class="bullet">{{ s.state === 'done' ? '✓' : ['I', 'II', 'III'][$index] }}</span>
+            <span class="bullet">{{ s.state === 'done' ? '✓' : $index + 1 }}</span>
             <span class="step-text">
               <strong>{{ s.title }}</strong>
               <span class="muted small">{{ s.detail }}</span>
@@ -95,7 +96,7 @@ type Step = 'done' | 'current' | 'todo';
             <p class="muted">
               Découvrez à qui vous offrez un cadeau, ses envies et des idées cadeaux.
             </p>
-            <button type="button" class="btn btn-gold btn-lg" (click)="go('giftee')">
+            <button type="button" class="btn btn-primary btn-lg" (click)="go('giftee')">
               Découvrir mon tirage
             </button>
           }
@@ -118,7 +119,7 @@ type Step = 'done' | 'current' | 'todo';
                 <span>
                   {{ p.displayName }}
                   @if (p.userId === d.event.ownerId) {
-                    <span class="badge badge-gold">★ Organisateur</span>
+                    <span class="badge badge-red">Organisatrice</span>
                   }
                   @if (p.id === d.me.id) {
                     <span class="badge">Vous</span>
@@ -135,6 +136,18 @@ type Step = 'done' | 'current' | 'todo';
                     {{ p.exclusionsConfirmed ? '✓ Validé' : '… En attente' }}
                   </span>
                 }
+                @if (d.isOwner && p.id !== d.me.id) {
+                  <button
+                    type="button"
+                    class="btn btn-sm"
+                    [disabled]="busy()"
+                    (click)="newLinkFor(p)"
+                    [attr.aria-label]="'Nouveau lien pour ' + p.displayName"
+                    title="Nouveau lien personnel"
+                  >
+                    🔗
+                  </button>
+                }
                 @if (d.event.status === 'open' && d.isOwner && p.userId !== d.event.ownerId) {
                   <button
                     type="button"
@@ -150,6 +163,14 @@ type Step = 'done' | 'current' | 'todo';
             </li>
           }
         </ul>
+        @if (resetLink(); as r) {
+          <app-personal-link-card
+            [key]="r.key"
+            [title]="'Nouveau lien de ' + r.name"
+            hint="Envoyez-le-lui en privé : son ancien lien ne fonctionne plus."
+            message="Ton nouveau lien HoHoWho :"
+          />
+        }
         @if (d.event.status === 'open' && !d.isOwner) {
           <button
             type="button"
@@ -169,9 +190,9 @@ type Step = 'done' | 'current' | 'todo';
             @case ('open') {
               <h2>1 · Invitez tout le monde</h2>
               <p class="muted small">
-                Partagez ce lien (WhatsApp, e-mail…). Chacun entre son e-mail puis remplit ses
-                envies. Par sécurité, un lien n’est affiché qu’une fois : créez-en un nouveau quand
-                vous en avez besoin.
+                Partagez ce lien (WhatsApp, SMS…). Chacun entre son prénom puis remplit ses envies.
+                Par sécurité, un lien n’est affiché qu’une fois : créez-en un nouveau quand vous en
+                avez besoin.
               </p>
               @if (invitation(); as inv) {
                 <div class="share">
@@ -257,14 +278,14 @@ type Step = 'done' | 'current' | 'todo';
                 </button>
               </div>
               <div class="row">
-                <button
-                  type="button"
+                <a
                   class="btn btn-green"
-                  [disabled]="busy()"
-                  (click)="emailEveryone(d, 'exclusions')"
+                  [href]="whatsapp(d, 'exclusions')"
+                  target="_blank"
+                  rel="noopener"
                 >
-                  ✉️ Écrire à tout le monde
-                </button>
+                  💬 Prévenir tout le monde sur WhatsApp
+                </a>
               </div>
               <hr />
               <h2>Tirage au sort</h2>
@@ -298,14 +319,14 @@ type Step = 'done' | 'current' | 'todo';
                   {{ copied() ? 'Copié ✓' : 'Copier' }}
                 </button>
               </div>
-              <button
-                type="button"
+              <a
                 class="btn btn-green"
-                [disabled]="busy()"
-                (click)="emailEveryone(d, 'giftee')"
+                [href]="whatsapp(d, 'giftee')"
+                target="_blank"
+                rel="noopener"
               >
-                ✉️ Écrire à tout le monde
-              </button>
+                💬 Prévenir tout le monde sur WhatsApp
+              </a>
             }
           }
           <details class="danger-zone">
@@ -348,31 +369,24 @@ type Step = 'done' | 'current' | 'todo';
       flex: none;
       display: grid;
       place-items: center;
-      width: 2.3rem;
-      height: 2.3rem;
+      width: 2.2rem;
+      height: 2.2rem;
       border-radius: 50%;
-      border: 1px solid var(--gold);
-      font-family: var(--font-caps);
-      font-weight: 700;
-      font-size: 0.85rem;
+      background: var(--soft);
+      font-weight: 800;
       color: var(--muted);
     }
     .current .bullet {
-      background: var(--crimson);
-      color: var(--ivory);
-      box-shadow:
-        inset 0 0 0 2px var(--crimson),
-        inset 0 0 0 3px var(--gold-light),
-        0 0 0 5px rgb(160 24 42 / 15%);
+      background: var(--red);
+      color: var(--white);
     }
     .done .bullet {
-      background: var(--emerald);
-      color: var(--gold-light);
+      background: var(--ink);
+      color: var(--white);
     }
     .step-text strong {
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      color: var(--emerald);
+      font-size: 1.05rem;
+      color: var(--ink);
     }
     .step-text {
       display: flex;
@@ -385,22 +399,26 @@ type Step = 'done' | 'current' | 'todo';
       }
     }
     .cta {
-      border-top: 4px solid var(--crimson);
+      box-shadow:
+        inset 6px 0 0 var(--red),
+        var(--shadow);
     }
     .cta-done {
-      border-top-color: var(--emerald-light);
+      box-shadow:
+        inset 6px 0 0 var(--green),
+        var(--shadow);
     }
     .progress {
       height: 8px;
       border-radius: 999px;
-      background: #efe5d0;
+      background: var(--soft);
       overflow: hidden;
       margin-bottom: 0.5rem;
     }
     .progress span {
       display: block;
       height: 100%;
-      background: linear-gradient(90deg, var(--emerald-light), var(--gold));
+      background: var(--red);
       transition: width 0.3s ease;
     }
     .person {
@@ -443,6 +461,7 @@ export class OverviewPage {
   protected readonly invitation = signal<CreatedInvitation | null>(null);
   protected readonly activeInvitations = signal(0);
   protected readonly copied = signal(false);
+  protected readonly resetLink = signal<{ name: string; key: string } | null>(null);
 
   protected readonly confirmedCount = computed(
     () => this.store.detail()?.participants.filter((p) => p.exclusionsConfirmed).length ?? 0,
@@ -548,23 +567,28 @@ export class OverviewPage {
     void this.router.navigate(['/events', this.eventId, tab]);
   }
 
-  /** Opens the organiser's own mail app with everyone in BCC: free, nothing to configure. */
-  async emailEveryone(detail: EventDetail, tab: 'exclusions' | 'giftee'): Promise<void> {
+  /** WhatsApp message announcing the next step, with the right link (free, nothing to set up). */
+  whatsapp(detail: EventDetail, tab: 'exclusions' | 'giftee'): string {
+    const name = detail.event.name;
+    const url = this.link(detail, tab);
+    const text =
+      tab === 'exclusions'
+        ? `🎁 ${name} : la liste est fermée ! Avant le tirage, dis-nous en secret s’il y a quelqu’un à qui tu préfères ne pas offrir de cadeau (ou personne), puis valide : ${url}`
+        : `🎉 ${name} : le tirage a eu lieu ! Découvre à qui tu offres un cadeau : ${url} (chut, c’est un secret 🤫)`;
+    return `https://wa.me/?text=${encodeURIComponent(text)}`;
+  }
+
+  /** Organiser: issue a new personal link for someone who lost theirs. */
+  async newLinkFor(participant: Participant): Promise<void> {
+    if (
+      !confirm(
+        `Créer un nouveau lien pour ${participant.displayName} ? Son ancien lien ne fonctionnera plus.`,
+      )
+    )
+      return;
     await this.run(async () => {
-      const emails = await this.backend.getParticipantEmails(detail.event.id);
-      const name = detail.event.name;
-      const url = this.link(detail, tab);
-      const [subject, body] =
-        tab === 'exclusions'
-          ? [
-              `${name} : dernière étape avant le tirage 🎁`,
-              `Coucou !\n\nLa liste de « ${name} » est fermée. Avant le tirage, dis-nous en secret s’il y a quelqu’un à qui tu préfères ne pas offrir de cadeau (ou personne), puis valide :\n\n${url}\n\nLe tirage se fera dès que tout le monde aura validé.\n\nÀ très vite ! 🎄`,
-            ]
-          : [
-              `${name} : découvre à qui tu offres un cadeau 🎉`,
-              `Coucou !\n\nLe tirage de « ${name} » a eu lieu. Découvre à qui tu offres un cadeau (avec ses envies et des idées) :\n\n${url}\n\nChut, c’est un secret ! 🤫`,
-            ];
-      window.location.href = mailtoLink(emails, subject, body);
+      const key = await this.backend.resetParticipantKey(participant.id);
+      this.resetLink.set({ name: participant.displayName, key });
     });
   }
 

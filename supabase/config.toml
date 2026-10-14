@@ -21,6 +21,10 @@ enable_signup = true
 # Magic-link e-mails are captured by the local mail viewer during development.
 enable_confirmations = false
 
+[functions.personal-access]
+# Called without a session (join / organiser sign-up); checks invitations, codes and callers itself.
+verify_jwt = false
+
 [functions.draw-assignments]
 # The function authenticates the caller itself (auth.getUser in index.ts). The gateway's legacy
 # JWT check is disabled because it rejects tokens signed with Supabase's new asymmetric keys.

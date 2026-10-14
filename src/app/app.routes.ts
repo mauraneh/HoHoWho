@@ -1,21 +1,24 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard, organizerGuard } from './core/auth.guards';
-import { HohowhoBackend } from './core/backend/hohowho-backend';
-import { takeNext } from './core/pending-navigation';
 
 export const routes: Routes = [
-  {
-    path: '',
-    pathMatch: 'full',
-    // Landing after an e-mailed sign-in link: continue where the user was going (e.g. a join link).
-    redirectTo: () => (inject(HohowhoBackend).currentUser() && takeNext()) || '/events',
-  },
+  { path: '', pathMatch: 'full', redirectTo: 'events' },
   {
     path: 'sign-in',
     canActivate: [guestGuard],
     title: 'Connexion · HoHoWho',
     loadComponent: () => import('./features/auth/sign-in-page').then((m) => m.SignInPage),
+  },
+  {
+    path: 'k/:key',
+    title: 'Connexion · HoHoWho',
+    loadComponent: () => import('./features/auth/access-page').then((m) => m.AccessPage),
+  },
+  {
+    path: 'mon-lien',
+    canActivate: [authGuard],
+    title: 'Mon lien · HoHoWho',
+    loadComponent: () => import('./features/auth/my-link-page').then((m) => m.MyLinkPage),
   },
   {
     path: 'join/:token',

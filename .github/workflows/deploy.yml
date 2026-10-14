@@ -91,7 +91,7 @@ jobs:
         with:
           deno-version: v2.x
       # The root package.json would make Deno expect a local node_modules; use Deno's own npm cache.
-      - run: deno check --node-modules-dir=none --no-lock supabase/functions/draw-assignments/index.ts
+      - run: deno check --node-modules-dir=none --no-lock supabase/functions/draw-assignments/index.ts supabase/functions/personal-access/index.ts
 
   deploy-pages:
     name: Deploy to GitHub Pages
@@ -146,6 +146,17 @@ jobs:
           supabase link --project-ref "$SUPABASE_PROJECT_REF" --password "$SUPABASE_DB_PASSWORD"
           supabase db push --password "$SUPABASE_DB_PASSWORD"
           supabase functions deploy draw-assignments --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+          supabase functions deploy personal-access --project-ref "$SUPABASE_PROJECT_REF" --no-verify-jwt
+      - name: Set the organiser code
+        if: steps.check.outputs.enabled == 'true'
+        env:
+          ORGANIZER_CODE: ${{ secrets.ORGANIZER_CODE }}
+        run: |
+          if [ -z "$ORGANIZER_CODE" ]; then
+            echo "::warning::ORGANIZER_CODE secret not set: the organiser sign-up is disabled."
+          else
+            supabase secrets set ORGANIZER_CODE="$ORGANIZER_CODE" --project-ref "$SUPABASE_PROJECT_REF"
+          fi
       - name: Sync organisers
         if: steps.check.outputs.enabled == 'true'
         env:

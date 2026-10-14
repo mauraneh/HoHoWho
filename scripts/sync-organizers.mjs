@@ -33,8 +33,9 @@ if (invalid.length) {
 const list = emails.map((e) => `('${e}')`).join(', ');
 const query = `
   begin;
-  delete from public.organizers;
-  insert into public.organizers (email) values ${list};
+  -- Organisers created with the organiser code (personal links) are kept.
+  delete from public.organizers where email not like '%@guest.hohowho.app';
+  insert into public.organizers (email) values ${list} on conflict do nothing;
   commit;
 `;
 

@@ -18,18 +18,10 @@ interface Flake {
   phase: number;
 }
 
-interface Sparkle {
-  x: number;
-  y: number;
-  size: number;
-  phase: number;
-}
-
 /**
  * Full-page falling snow drawn on a canvas, with three depth layers (size, speed, blur and
- * opacity depend on depth), a gentle wind, 3D parallax following the pointer and the scroll,
- * and a few twinkling golden sparkles. Pauses when the tab is hidden and stays still when the
- * user prefers reduced motion.
+ * opacity depend on depth), a gentle wind, 3D parallax following the pointer and the scroll.
+ * Pauses when the tab is hidden and stays still when the user prefers reduced motion.
  */
 @Component({
   selector: 'app-snowfall',
@@ -79,7 +71,6 @@ export class Snowfall {
     let width = 0;
     let height = 0;
     let flakes: Flake[] = [];
-    let sparkles: Sparkle[] = [];
     const pointer = { x: 0.5, y: 0.5, tx: 0.5, ty: 0.5 };
 
     const makeFlake = (y = Math.random() * height): Flake => {
@@ -103,12 +94,6 @@ export class Snowfall {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const count = Math.min(320, Math.round((width * height) / 5200));
       flakes = Array.from({ length: count }, () => makeFlake());
-      sparkles = Array.from({ length: Math.round(count / 18) }, () => ({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        size: 1.5 + Math.random() * 2.5,
-        phase: Math.random() * Math.PI * 2,
-      }));
     };
 
     const draw = (time: number, dt: number) => {
@@ -117,24 +102,6 @@ export class Snowfall {
       pointer.y += (pointer.ty - pointer.y) * 0.04;
       const scroll = window.scrollY;
       const wind = Math.sin(time / 7000) * 14;
-
-      for (const sparkle of sparkles) {
-        const alpha = Math.max(0, Math.sin(time / 900 + sparkle.phase)) ** 3 * 0.8;
-        if (alpha < 0.02) continue;
-        ctx.save();
-        ctx.globalAlpha = alpha;
-        ctx.translate(sparkle.x, sparkle.y);
-        ctx.fillStyle = '#e6cd8e';
-        ctx.beginPath();
-        const s = sparkle.size;
-        ctx.moveTo(0, -s * 2.2);
-        ctx.quadraticCurveTo(0, 0, s * 2.2, 0);
-        ctx.quadraticCurveTo(0, 0, 0, s * 2.2);
-        ctx.quadraticCurveTo(0, 0, -s * 2.2, 0);
-        ctx.quadraticCurveTo(0, 0, 0, -s * 2.2);
-        ctx.fill();
-        ctx.restore();
-      }
 
       for (const flake of flakes) {
         flake.y += flake.speed * flake.z * dt;

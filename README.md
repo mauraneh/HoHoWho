@@ -8,19 +8,19 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 
 ## Features
 
-| Feature                    | How it works                                                                                                                                                                                                                                                                                                                                        |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Language                   | The interface is in French (dates, prices and messages included).                                                                                                                                                                                                                                                                                   |
-| Accounts without passwords | Name + e-mail only: Supabase Auth e-mails a one-click magic link that works on any device. The account is created on first use.                                                                                                                                                                                                                     |
-| Events                     | Name, description, date, budget range and currency. The organiser can delete the event.                                                                                                                                                                                                                                                             |
-| Secure invitations         | Each link carries a random 256-bit token. Only its SHA-256 hash is stored. Links expire after 14 days, can be revoked, and stop working once the list is closed. Anyone with the link can see the event name before entering their e-mail.                                                                                                          |
-| Three-step flow            | **1. Join & wishes:** people open the link and fill in the questionnaire. **2. Exclusions:** the organiser closes the list; each person privately picks who they'd rather not give a gift to (nobody else can see it), then validates. **3. Draw:** names are drawn automatically when the last person validates (the organiser can also force it). |
-| Draw                       | The `draw-assignments` Edge Function draws names with a CSPRNG and backtracking, so it respects every personal exclusion. It saves the result atomically, and the database checks it again.                                                                                                                                                         |
-| Privacy of assignments     | Row Level Security lets each person read only the assignment where they are the giver. Nobody, not even the organiser, can see the full list.                                                                                                                                                                                                       |
-| Questionnaire & wishlist   | Interests, preferred kinds of gifts, things to avoid, sizes and notes, plus wishlist items. Only the author and their Secret Santa can read them.                                                                                                                                                                                                   |
-| Gift ideas                 | A deterministic, rule-based recommender. It scores a curated catalogue against the questionnaire, keywords found in the notes and wishlist, the things to avoid and the budget, and explains each suggestion. It is pluggable, so an AI provider can be added later.                                                                                |
-| Anonymous messages         | Each giftee has one thread with their Santa. Messages store no sender, only a "from Santa" flag.                                                                                                                                                                                                                                                    |
-| Demo mode                  | In development everything runs in the browser with seeded demo data. No account or network is needed.                                                                                                                                                                                                                                               |
+| Feature                  | How it works                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Language                 | The interface is in French (dates, prices and messages included).                                                                                                                                                                                                                                                                                   |
+| Personal links           | No e-mail, no password. Joining only asks for a first name; the person gets a private personal link (`#/k/<key>`) that signs them in on any device. They keep it (WhatsApp, notes…), can regenerate it from « Mon lien », and the organiser can issue a new one for a participant who lost theirs.                                                  |
+| Events                   | Name, description, date, budget range and currency. The organiser can delete the event.                                                                                                                                                                                                                                                             |
+| Secure invitations       | Each link carries a random 256-bit token. Only its SHA-256 hash is stored. Links expire after 14 days, can be revoked, and stop working once the list is closed. Anyone with the link can see the event name before entering their first name.                                                                                                      |
+| Three-step flow          | **1. Join & wishes:** people open the link and fill in the questionnaire. **2. Exclusions:** the organiser closes the list; each person privately picks who they'd rather not give a gift to (nobody else can see it), then validates. **3. Draw:** names are drawn automatically when the last person validates (the organiser can also force it). |
+| Draw                     | The `draw-assignments` Edge Function draws names with a CSPRNG and backtracking, so it respects every personal exclusion. It saves the result atomically, and the database checks it again.                                                                                                                                                         |
+| Privacy of assignments   | Row Level Security lets each person read only the assignment where they are the giver. Nobody, not even the organiser, can see the full list.                                                                                                                                                                                                       |
+| Questionnaire & wishlist | Interests, preferred kinds of gifts, things to avoid, sizes and notes, plus wishlist items. Only the author and their Secret Santa can read them.                                                                                                                                                                                                   |
+| Gift ideas               | A deterministic, rule-based recommender. It scores a curated catalogue against the questionnaire, keywords found in the notes and wishlist, the things to avoid and the budget, and explains each suggestion. It is pluggable, so an AI provider can be added later.                                                                                |
+| Anonymous messages       | Each giftee has one thread with their Santa. Messages store no sender, only a "from Santa" flag.                                                                                                                                                                                                                                                    |
+| Demo mode                | In development everything runs in the browser with seeded demo data. No account or network is needed.                                                                                                                                                                                                                                               |
 
 ## Architecture
 
@@ -28,8 +28,8 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 ┌──────────────────────────┐   HTTPS (anon key + user JWT)   ┌──────────────────────────────┐
 │ Angular SPA (static)     │ ──────────────────────────────▶ │ Supabase Free                │
 │ GitHub Pages / any CDN   │   PostgREST · Auth · Functions  │  Postgres + RLS + RPCs       │
-│                          │                                 │  Auth (e-mail magic link)    │
-│ HohowhoBackend contract  │                                 │  Edge Function: draw names   │
+│                          │                                 │  Auth (personal links)       │
+│ HohowhoBackend contract  │                                 │  Edge Functions: draw, links │
 │  ├─ SupabaseBackend      │                                 └──────────────────────────────┘
 │  └─ MockBackend (dev)    │
 │ Recommendation providers │
@@ -47,6 +47,7 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 - Writes that must be atomic or need elevated rights go through `SECURITY DEFINER` functions that check `auth.uid()`: `create_event`, `create_invitation`, `preview_invitation` and `accept_invitation`.
 - `apply_draw` can only be executed by `service_role`, which means only by the Edge Function. It locks the event and checks again that the draw is complete, that nobody draws themselves and that no exclusion is broken.
 - Exclusions are personal and private: `submit_exclusions` writes them, and RLS lets each person read only their own. The organiser only sees who has validated, never what they chose. `close_registrations` and `reopen_registrations` move the event between phases and are organiser-only.
+- **Personal links.** The `personal-access` Edge Function creates the accounts. Each one is a regular Supabase Auth user with a synthetic address (`g<16 hex>@guest.hohowho.app`, never e-mailed) and a random 192-bit secret as its password. The personal key is `<account>.<secret>`, so signing in is a plain `signInWithPassword` call. An account can only be created with a valid invitation to an open event (participant) or with the `ORGANIZER_CODE` secret (organiser). Regenerating a link changes the password, which invalidates the old link.
 - The browser only ever holds the public **anon/publishable key**. The `service_role` key exists only inside Supabase Edge Functions. `scripts/write-runtime-config.mjs` refuses to write a service-role key into `config.json`.
 - `supabase/tests/rls_test.sql` checks these rules: outsiders, non-owners, a fake Santa, a fake receiver, direct inserts, a draw replayed twice and so on. CI runs it against a real PostgreSQL server.
 
@@ -86,9 +87,9 @@ pnpm install
 pnpm start            # http://localhost:4200
 ```
 
-The app runs entirely in your browser with demo data stored in `localStorage`. Sign in with `alice@example.com`, `bob@example.com`, `carol@example.com`, `dave@example.com` or any other e-mail: in demo mode no e-mail is sent and you are signed in instantly.
+The app runs entirely in your browser with demo data stored in `localStorage`. Open a demo personal link from the home page: `#/k/demo-alice` (organiser), `#/k/demo-bob`, `#/k/demo-carol` or `#/k/demo-dave`. The demo organiser code is `noel`.
 
-- **Family Christmas** is open and organised by Alice. Use it to try the invitation link, closing the list, exclusions and the automatic draw. Sign out and open the invitation link to join as someone new.
+- **Family Christmas** is open and organised by Alice. Use it to try the invitation link, closing the list, exclusions and the automatic draw. Sign out and open the invitation link to join as someone new with just a first name.
 - **Office Party** has already been drawn. Use it to try the giftee page, gift ideas and messages. Alice is Carol's Santa.
 - **Reset demo data** in the footer restores the seed.
 
@@ -104,11 +105,11 @@ To run the whole stack locally with the Supabase CLI and Docker:
 ```bash
 supabase start                # prints the local API URL and anon key → put them in .env
 supabase db reset             # applies supabase/migrations
-supabase functions serve      # serves draw-assignments locally
+supabase functions serve      # serves draw-assignments and personal-access locally
 pnpm start:supabase
 ```
 
-Magic-link e-mails sent by the local stack appear in the local mail viewer printed by `supabase start`.
+To create an organiser account locally, put `ORGANIZER_CODE=<phrase>` in `supabase/functions/.env` before `supabase functions serve`.
 
 ## Commands
 
@@ -135,16 +136,17 @@ npx serve dist/hohowho/browser    # any static file server works
 
 ### Configuration
 
-| Where                             | What                                                                                                                                                                                                  |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/environments/*.ts`           | Build-time switch: `dataSource: 'mock' \| 'supabase'`. No secrets.                                                                                                                                    |
-| `config.json` (runtime)           | `{ "supabaseUrl", "supabaseAnonKey" }`. Generated, git-ignored, never committed.                                                                                                                      |
-| `.env` (local only)               | Source for `config.json` locally. Template: `.env.example`.                                                                                                                                           |
-| GitHub repository **variables**   | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `BASE_HREF`.                                                                                                                                            |
-| GitHub environment `SUPABASE_URL` | Same variables and secrets can live in this environment (Settings → Environments); the CI jobs read it.                                                                                               |
-| GitHub repository **secrets**     | Optional, for automatic Supabase deploys: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.                                                                                    |
-| `ORGANIZER_EMAILS` variable       | Comma-separated e-mails allowed to create a Secret Santa (organisers). Synced to `public.organizers` on each deploy by `scripts/sync-organizers.mjs`; never committed. If empty, anyone can organise. |
-| Edge Function secret (optional)   | `ALLOWED_ORIGINS`: comma-separated CORS origins. Defaults to `*`, which is safe because auth uses bearer tokens, not cookies.                                                                         |
+| Where                             | What                                                                                                                                                                                                          |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/environments/*.ts`           | Build-time switch: `dataSource: 'mock' \| 'supabase'`. No secrets.                                                                                                                                            |
+| `config.json` (runtime)           | `{ "supabaseUrl", "supabaseAnonKey" }`. Generated, git-ignored, never committed.                                                                                                                              |
+| `.env` (local only)               | Source for `config.json` locally. Template: `.env.example`.                                                                                                                                                   |
+| GitHub repository **variables**   | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `BASE_HREF`.                                                                                                                                                    |
+| GitHub environment `SUPABASE_URL` | Same variables and secrets can live in this environment (Settings → Environments); the CI jobs read it.                                                                                                       |
+| GitHub repository **secrets**     | Optional, for automatic Supabase deploys: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.                                                                                            |
+| `ORGANIZER_CODE` secret           | Phrase that unlocks « Espace organisatrice » on the home page and creates an organiser personal link. Set as a Supabase function secret by CI; never committed. Without it, organiser sign-up is disabled.    |
+| `ORGANIZER_EMAILS` (optional)     | Comma-separated e-mails of existing e-mail accounts allowed to organise. Synced to `public.organizers` on each deploy; organisers created with the code are kept. If the table is empty, anyone can organise. |
+| Edge Function secret (optional)   | `ALLOWED_ORIGINS`: comma-separated CORS origins. Defaults to `*`, which is safe because auth uses bearer tokens, not cookies.                                                                                 |
 
 ---
 
@@ -157,13 +159,13 @@ npx serve dist/hohowho/browser    # any static file server works
    - **CLI:** `supabase link --project-ref <ref>`, then `supabase db push`.
    - **Dashboard:** open the SQL editor, paste `supabase/migrations/20261013000000_initial_schema.sql` and run it.
    - **CI:** add the three Supabase secrets (see step 3) and push to `main`.
-3. Deploy the Edge Function with `supabase functions deploy draw-assignments --project-ref <ref>`, or let CI do it. `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by Supabase.
+3. Deploy the Edge Functions with `supabase functions deploy draw-assignments --no-verify-jwt --project-ref <ref>` (same for `personal-access`) and set the organiser code with `supabase secrets set ORGANIZER_CODE=<phrase>`, or let CI do both. `SUPABASE_URL`, `SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY` are injected automatically by Supabase.
 4. Under **Authentication → URL Configuration**:
    - Set **Site URL** to `https://<owner>.github.io/<repo>/`.
-   - Add `https://<owner>.github.io/<repo>/**` to **Redirect URLs** (the `**` lets sign-in links bring people back to their invitation), plus `http://localhost:4200/**` for local development.
+   - Add `https://<owner>.github.io/<repo>/**` to **Redirect URLs**, plus `http://localhost:4200/**` for local development (CI does this for you).
 5. Copy the **Project URL** and the **anon/publishable key** from **Project Settings → API**.
 
-> **E-mail (required for magic links):** Supabase's built-in e-mail sender only delivers to the members of your Supabase team and a few messages per hour, so your friends won't receive their sign-in links with it. Plug in a free SMTP provider under **Project Settings → Authentication → SMTP Settings**. For example, [Brevo](https://www.brevo.com) is free for 300 e-mails a day without a credit card: create an account, verify your sender address, then copy the SMTP host `smtp-relay.brevo.com`, port `587`, login and SMTP key into Supabase. Gmail with an app password also works. No paid e-mail service is required.
+No e-mail provider is needed: people sign in with their personal link.
 
 ### 2. Enable GitHub Pages
 
@@ -180,6 +182,7 @@ Under **Settings → Secrets and variables → Actions**:
   - `SUPABASE_ACCESS_TOKEN`, a personal access token from your Supabase account.
   - `SUPABASE_PROJECT_REF`.
   - `SUPABASE_DB_PASSWORD`.
+  - `ORGANIZER_CODE`, the phrase you will type in « Espace organisatrice » to get your organiser link.
 
 ### 4. Push to `main`
 
@@ -187,24 +190,13 @@ Under **Settings → Secrets and variables → Actions**:
 
 1. **frontend:** `pnpm install --frozen-lockfile`, then format check, lint, unit tests, a production build with the right `--base-href`, `config.json` generation and the Pages artifact upload.
 2. **database:** spins up PostgreSQL, applies the migrations and runs the RLS test suite.
-3. **edge-functions:** `deno check` on the draw function.
+3. **edge-functions:** `deno check` on both Edge Functions.
 4. **deploy-pages:** publishes to `https://<owner>.github.io/<repo>/`.
-5. **deploy-supabase:** `supabase db push` and `functions deploy`, only when the Supabase secrets are set.
+5. **deploy-supabase:** `supabase db push`, `functions deploy` and the `ORGANIZER_CODE` function secret, only when the Supabase secrets are set.
 
-The Supabase job also runs `scripts/sync-auth-config.mjs`. It installs the French, on-brand sign-in e-mails (`supabase/templates/magic-link.html` and `confirmation.html`, whose header image is `public/email/header.jpg`). It also adds `<site>/**` to the auth redirect allow-list and sets the site URL if it is still the default. Set the `SITE_URL` variable when the site is not served from `https://<owner>.github.io/<repo>/`.
+The Supabase job also runs `scripts/sync-auth-config.mjs`, which adds `<site>/**` to the auth redirect allow-list and sets the site URL if it is still the default. Set the `SITE_URL` variable when the site is not served from `https://<owner>.github.io/<repo>/`. Sign-in uses personal links, so no SMTP server is required. If you also set the optional `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` and `SMTP_SENDER_EMAIL` secrets, the script configures them and installs the French auth e-mail templates from `supabase/templates/`.
 
-**Sign-in e-mails (free SMTP).** Supabase's built-in sender only reaches your Supabase team, and on the free plan custom e-mail templates require your own SMTP server. With a free [Brevo](https://www.brevo.com) account (300 e-mails a day, no credit card), add these secrets to the GitHub environment and the deploy configures everything:
-
-| Secret              | Value                                      |
-| ------------------- | ------------------------------------------ |
-| `SMTP_HOST`         | `smtp-relay.brevo.com`                     |
-| `SMTP_USER`         | Your Brevo SMTP login (Brevo → SMTP & API) |
-| `SMTP_PASS`         | A Brevo SMTP key                           |
-| `SMTP_SENDER_EMAIL` | A sender address verified in Brevo         |
-
-`SMTP_PORT` (default `587`) and `SMTP_SENDER_NAME` (default `HoHoWho`) are optional.
-
-When `ORGANIZER_EMAILS` is set (repository or environment variable), the Supabase job also syncs the organiser list: only those addresses see "Nouveau Secret Santa" and can create events; everyone else joins through invitation links.
+When `ORGANIZER_EMAILS` is set, the Supabase job also syncs those addresses into the organiser list. Organisers created with `ORGANIZER_CODE` are always kept.
 
 Pull requests run steps 1–3 without deploying.
 
@@ -241,8 +233,8 @@ To extend the catalogue, edit `src/app/recommendations/gift-catalog.ts`. A unit 
 | Blank page or 404 for JS files on GitHub Pages        | Wrong base href. It must match the repository path (`/<repo>/`, case-sensitive) or be `/` with a custom domain. Set `BASE_HREF` if needed.                              |
 | Pages job fails with "Get Pages site failed"          | Enable Pages with **Source: GitHub Actions** (step 2).                                                                                                                  |
 | "GitHub Pages deployment skipped" warning in CI       | Add the repository **variables** `SUPABASE_URL` and `SUPABASE_ANON_KEY`, then re-run the workflow. Until then CI still checks everything but does not publish the site. |
-| Sign-in e-mail never arrives / "rate limit exceeded"  | Configure a free SMTP provider (see Deployment, step 1). Supabase's built-in sender only reaches your Supabase team members. Also check the spam folder.                |
-| Sign-in link opens the site but you're not signed in  | The link may have expired or been used already: request a new one. Check that `https://<owner>.github.io/<repo>/**` is in **Redirect URLs**.                            |
+| « Code organisatrice incorrect » / organiser disabled | Set the `ORGANIZER_CODE` secret in GitHub and re-run the deploy, or run `supabase secrets set ORGANIZER_CODE=<phrase>`.                                                 |
+| A personal link no longer works                       | It was regenerated (from « Mon lien » or by the organiser). Use the newest link, or ask the organiser for a new one (🔗 next to your name).                             |
 | "Could not reach the draw service"                    | Deploy the function (`supabase functions deploy draw-assignments`). Check its logs in the dashboard. If you set `ALLOWED_ORIGINS`, it must include your site's origin.  |
 | "No valid draw exists with the current exclusions"    | The exclusions leave no possible assignment. Remove some of them.                                                                                                       |
 | "You are not allowed to do this."                     | An RLS or privilege check refused the action. For example, only the organiser can invite or draw, and nothing can be changed after the draw.                            |

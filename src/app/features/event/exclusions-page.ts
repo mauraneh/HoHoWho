@@ -113,19 +113,19 @@ import { EventStore } from './event-store';
       padding: 0.7rem 0.9rem;
       border: 2px solid var(--line);
       border-radius: 16px;
-      background: #fffdf9;
+      background: var(--white);
       cursor: pointer;
       transition: all 0.12s ease;
     }
     .person:hover {
-      border-color: var(--gold);
+      border-color: var(--ink);
     }
     .person input {
       position: absolute;
       opacity: 0;
     }
     .person:focus-within {
-      outline: 3px solid var(--gold);
+      outline: 3px solid rgb(226 55 63 / 55%);
       outline-offset: 2px;
     }
     .person.on {

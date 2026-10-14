@@ -14,12 +14,11 @@ import { GifteeProfile } from '../../core/models';
 import { optionLabel } from '../../recommendations/questionnaire-options';
 import { GiftSuggestion } from '../../recommendations/recommendation.model';
 import { RecommendationService } from '../../recommendations/recommendation.service';
-import { Corners, Divider, Holly } from '../../shared/ornaments';
 import { EventStore } from './event-store';
 
 @Component({
   selector: 'app-giftee-page',
-  imports: [RouterLink, Corners, Divider, Holly],
+  imports: [RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (error(); as e) {
@@ -29,32 +28,14 @@ import { EventStore } from './event-store';
     @if (loading()) {
       <p class="muted">Chargement…</p>
     } @else if (giftee(); as g) {
-      <section class="card card-night reveal" [class.opened]="doorsOpen()">
-        <div class="snow" aria-hidden="true"></div>
-        <button
-          type="button"
-          class="gate"
-          [attr.aria-hidden]="doorsOpen()"
-          [tabIndex]="doorsOpen() ? -1 : 0"
-          (click)="doorsOpen.set(true)"
-        >
-          <span class="gate-leaf left"><span class="panel"></span></span>
-          <span class="gate-leaf right"><span class="panel"></span></span>
-          <span class="seal">
-            <span class="seal-mark" aria-hidden="true">✦</span>
-            <span class="seal-text">Ouvrir</span>
-          </span>
-        </button>
-        <app-corners />
-        <app-holly [size]="72" />
-        <span class="eyebrow">Vous êtes le Père Noël secret de</span>
-        <h2 class="script name">{{ g.participant.displayName }}</h2>
-        <app-divider />
+      <section class="reveal" [class.opened]="revealed()">
+        <span class="eyebrow">Vous offrez un cadeau à</span>
+        <h2 class="name">{{ g.participant.displayName }}</h2>
         <p class="muted">Chut… c’est un secret. Posez vos questions par message anonyme.</p>
-        <a routerLink="../messages" class="btn btn-gold btn-sm">✉ Envoyer un message anonyme</a>
-        <button type="button" class="link-btn replay" (click)="replay()">
-          ↺ Revoir l’ouverture
-        </button>
+        <div class="row">
+          <a routerLink="../messages" class="btn btn-primary">Envoyer un message anonyme</a>
+          <button type="button" class="link-btn" (click)="replay()">↺ Revoir</button>
+        </div>
       </section>
 
       <div class="grid pair">
@@ -165,148 +146,29 @@ import { EventStore } from './event-store';
   `,
   styles: `
     .reveal {
-      overflow: hidden;
-      text-align: center;
-      padding: 2.6rem 1.5rem 2.4rem;
-    }
-    .reveal > :not(app-corners, .snow) {
-      position: relative;
-    }
-    .reveal app-holly,
-    .reveal .eyebrow {
-      display: flex;
-      justify-content: center;
-    }
-    .reveal {
-      perspective: 1600px;
-      min-height: 380px;
+      margin: 0.5rem 0 2.5rem;
     }
     .name {
-      font-size: clamp(3.6rem, 12vw, 5.6rem);
-      line-height: 1.05;
-      color: var(--gold-light);
-      margin: 0.3rem 0 0;
-      text-shadow: 0 3px 0 rgb(0 0 0 / 30%);
+      font-size: clamp(3.8rem, 15vw, 9rem);
+      line-height: 0.92;
+      letter-spacing: -0.055em;
+      margin: 0.4rem 0 1rem;
       opacity: 0;
     }
     .opened .name {
-      animation: reveal 1.6s ease-out 0.7s both;
+      animation: reveal 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
     }
-    .gate {
-      position: absolute !important;
-      inset: 0;
-      z-index: 5;
-      padding: 0;
-      border: none;
-      background: none;
-      cursor: pointer;
-      transform-style: preserve-3d;
-    }
-    .gate-leaf {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 50%;
-      background:
-        linear-gradient(180deg, rgb(0 0 0 / 10%) 1px, transparent 1px),
-        linear-gradient(170deg, #b8243a 0%, var(--crimson) 50%, var(--crimson-dark) 100%);
-      background-size:
-        100% 33.4%,
-        100% 100%;
-      box-shadow:
-        inset 0 0 0 1px var(--gold),
-        inset 0 0 0 7px rgb(0 0 0 / 12%),
-        inset 0 0 0 8px rgb(201 162 90 / 55%);
-      transition:
-        transform 1.8s cubic-bezier(0.45, 0.05, 0.2, 1),
-        opacity 0.6s ease 1.4s;
-      backface-visibility: hidden;
-    }
-    .gate-leaf.left {
-      left: 0;
-      transform-origin: left center;
-    }
-    .gate-leaf.right {
-      right: 0;
-      transform-origin: right center;
-    }
-    .panel {
-      position: absolute;
-      inset: 14% 16%;
-      border: 1px solid rgb(230 205 142 / 60%);
-      border-radius: 3px;
-      box-shadow: inset 0 0 18px rgb(0 0 0 / 25%);
-    }
-    .seal {
-      position: absolute;
-      left: 50%;
-      top: 50%;
-      width: 92px;
-      height: 92px;
-      margin: -46px 0 0 -46px;
-      border-radius: 50%;
-      display: grid;
-      place-content: center;
-      gap: 0.1rem;
-      color: var(--emerald-deep);
-      background: radial-gradient(circle at 35% 30%, #f6e2a8, var(--gold) 55%, #8a6a2c);
-      box-shadow:
-        0 0 0 4px rgb(138 106 44 / 60%),
-        0 8px 18px rgb(0 0 0 / 45%),
-        0 0 30px 6px rgb(230 205 142 / 45%);
-      transition:
-        transform 0.5s ease,
-        opacity 0.4s ease;
-      animation: pulse 2s ease-in-out infinite;
-    }
-    .seal-mark {
-      font-size: 1.6rem;
-      line-height: 1;
-    }
-    .seal-text {
-      font-family: var(--font-caps);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-    }
-    @keyframes pulse {
-      50% {
-        transform: scale(1.06);
-      }
-    }
-    .opened .gate {
-      pointer-events: none;
-    }
-    .opened .gate-leaf.left {
-      transform: rotateY(-115deg);
-      opacity: 0;
-    }
-    .opened .gate-leaf.right {
-      transform: rotateY(115deg);
-      opacity: 0;
-    }
-    .opened .seal {
-      transform: scale(0.2);
-      opacity: 0;
-      animation: none;
-    }
-    .replay {
-      display: block;
-      margin: 0.9rem auto 0;
-      color: var(--gold-light) !important;
-      font-size: 0.85rem;
+    .reveal .row {
+      margin-top: 1.25rem;
     }
     @keyframes reveal {
       from {
         opacity: 0;
-        letter-spacing: 0.2em;
-        filter: blur(6px);
-        transform: scale(0.9);
+        filter: blur(14px);
+        transform: translateY(24px);
       }
       to {
         opacity: 1;
-        letter-spacing: normal;
         filter: none;
         transform: none;
       }
@@ -316,11 +178,6 @@ import { EventStore } from './event-store';
       .opened .name {
         animation: none;
         opacity: 1;
-      }
-      .gate-leaf,
-      .seal {
-        transition-duration: 0.01ms;
-        animation: none;
       }
     }
     .pair {
@@ -334,16 +191,14 @@ import { EventStore } from './event-store';
       white-space: pre-line;
     }
     .idea {
-      border: 1px solid var(--line);
-      border-top: 3px solid var(--crimson);
-      background: #fffdf7;
-      border-radius: 4px;
-      padding: 0.9rem;
+      background: var(--soft);
+      border-radius: 14px;
+      padding: 1rem;
     }
     .reasons {
       margin: 0;
       padding-left: 1.1rem;
-      color: var(--emerald);
+      color: var(--muted);
     }
   `,
 })
@@ -355,8 +210,8 @@ export class GifteePage {
   protected readonly giftee = signal<GifteeProfile | null>(null);
   protected readonly suggestions = signal<GiftSuggestion[]>([]);
   protected readonly loading = signal(true);
-  /** The double door in front of the name: opens by itself shortly after loading. */
-  protected readonly doorsOpen = signal(false);
+  /** Drives the name's fade-in; toggled off and on again to replay it. */
+  protected readonly revealed = signal(false);
   protected readonly error = signal<string | null>(null);
 
   constructor() {
@@ -373,8 +228,8 @@ export class GifteePage {
     try {
       const giftee = await this.backend.getGiftee(eventId);
       this.giftee.set(giftee);
-      this.doorsOpen.set(false);
-      if (giftee) setTimeout(() => this.doorsOpen.set(true), 1100);
+      this.revealed.set(false);
+      if (giftee) setTimeout(() => this.revealed.set(true), 150);
       if (giftee) {
         const event = this.store.detail()!.event;
         this.suggestions.set(
@@ -395,10 +250,10 @@ export class GifteePage {
     }
   }
 
-  /** Closes the doors and opens them again, for the pleasure of it. */
+  /** Plays the reveal again. */
   replay(): void {
-    this.doorsOpen.set(false);
-    setTimeout(() => this.doorsOpen.set(true), 900);
+    this.revealed.set(false);
+    setTimeout(() => this.revealed.set(true), 50);
   }
 
   label(id: string): string {

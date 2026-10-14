@@ -30,13 +30,7 @@
                 "input": "public"
               }
             ],
-            "styles": [
-              "@fontsource/great-vibes/index.css",
-              "@fontsource-variable/cinzel/index.css",
-              "@fontsource-variable/cormorant-garamond/index.css",
-              "@fontsource-variable/dm-sans/index.css",
-              "src/styles.css"
-            ]
+            "styles": ["@fontsource-variable/dm-sans/index.css", "src/styles.css"]
           },
           "configurations": {
             "production": {

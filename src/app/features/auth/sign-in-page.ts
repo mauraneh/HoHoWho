@@ -1,248 +1,100 @@
-import {
-  afterNextRender,
-  ChangeDetectionStrategy,
-  Component,
-  DestroyRef,
-  ElementRef,
-  inject,
-  input,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { safeReturnUrl } from '../../core/format';
-import { takeNext } from '../../core/pending-navigation';
 import { DATA_SOURCE } from '../../core/tokens';
-import { AdventCalendar } from '../../shared/advent-calendar';
-import { AdventDoor } from '../../shared/advent-door';
-import { Bauble, BowRibbon, Corners, Divider } from '../../shared/ornaments';
-import { SignInForm } from './sign-in-form';
+import { AccessPanel } from './access-panel';
 
 @Component({
   selector: 'app-sign-in-page',
-  imports: [SignInForm, Bauble, BowRibbon, Corners, Divider, AdventDoor, AdventCalendar],
+  imports: [AccessPanel],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <section class="hero">
-      <div class="snow" aria-hidden="true"></div>
-      <app-bauble class="bauble b1" color="red" [drop]="70" />
-      <app-bauble class="bauble b2" color="green" [drop]="40" />
-      <app-bauble class="bauble b3" color="red" [drop]="55" />
-      <div class="hero-inner">
-        <div class="hero-copy">
-          <app-corners />
-          <span class="eyebrow">Depuis 2026 · Gratuit &amp; sans pub</span>
-          <h1>
-            <span class="script title">Secret Santa</span>
-            <span class="subtitle">Qui gâte qui cette année ?</span>
-          </h1>
-          <app-divider />
-          <p class="lead">
-            Un seul lien à partager : chacun donne ses envies, vous fermez la liste et HoHoWho tire
-            les noms au sort. Équitable, secret et tout simple.
-          </p>
-        </div>
-        <div class="card signin-card">
-          <span class="eyebrow">Organiser ou participer</span>
-          <h2>Votre invitation vous attend</h2>
-          <app-sign-in-form [next]="target()" (signedIn)="continue()" />
-        </div>
+    <section class="container hero">
+      <h1 class="display">Secret<br />Santa<span class="dot">.</span></h1>
+      <p class="lead">
+        Un lien à partager. Chacun donne ses envies, puis les noms sont tirés au sort. Gratuit, sans
+        pub, sans mot de passe.
+      </p>
+    </section>
+
+    <section class="container access">
+      <div class="card signin-card">
+        <h2>Entrer</h2>
+        <app-access-panel (signedIn)="continue()" />
       </div>
     </section>
 
-    <app-bow-ribbon />
-
-    <section class="container how">
-      <span class="eyebrow">Comment ça marche</span>
-      <h2 class="script how-title">Trois petites portes</h2>
-      <div class="doors" #doors>
-        @for (step of steps; track step.n; let i = $index) {
-          <app-advent-door
-            class="step-door"
-            [open]="stepsOpen()"
-            [peek]="!stepsOpen()"
-            [delay]="i * 350"
-            [tone]="i === 1 ? 'emerald' : 'crimson'"
-          >
-            <div front class="step-front">
-              <span class="door-n">{{ step.n }}</span>
-              <h3>{{ step.title }}</h3>
-            </div>
-            <div inside class="step-inside">
-              <span class="door-icon" aria-hidden="true">{{ step.icon }}</span>
-              <h3>{{ step.title }}</h3>
-              <p>{{ step.text }}</p>
-            </div>
-          </app-advent-door>
+    <section class="container">
+      <h2 class="section-title">Comment ça marche</h2>
+      <ol class="steps">
+        @for (step of steps; track step.n) {
+          <li>
+            <span class="n">{{ step.n }}</span>
+            <h3>{{ step.title }}</h3>
+            <p class="muted">{{ step.text }}</p>
+          </li>
         }
-      </div>
-
-      <app-bow-ribbon />
-      <span class="eyebrow">En attendant Noël</span>
-      <h2 class="script how-title">Le calendrier de l’Avent</h2>
-      <p class="muted calendar-hint">Ouvrez une case… ou toutes, on ne dira rien.</p>
-      <app-advent-calendar class="calendar" />
+      </ol>
 
       @if (isMock) {
         <div class="card small demo">
-          <strong>Comptes de démo :</strong> <code>alice&#64;example.com</code> (organisatrice),
-          <code>bob&#64;example.com</code>, <code>carol&#64;example.com</code>,
-          <code>dave&#64;example.com</code>, ou n’importe quel e-mail.
+          <strong>Liens de démo :</strong>
+          <a href="#/k/demo-alice">Alice (organisatrice)</a> · <a href="#/k/demo-bob">Bob</a> ·
+          <a href="#/k/demo-carol">Carol</a> · <a href="#/k/demo-dave">Dave</a>. Code organisatrice
+          : <code>noel</code>.
         </div>
       }
     </section>
   `,
   styles: `
     .hero {
-      position: relative;
-      overflow: hidden;
-      color: var(--ivory);
-      background:
-        radial-gradient(circle at 15% 15%, rgb(201 162 90 / 20%), transparent 35%),
-        radial-gradient(circle at 85% 85%, rgb(160 24 42 / 30%), transparent 40%),
-        repeating-linear-gradient(45deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 12px);
+      padding-top: 4rem;
+      padding-bottom: 1rem;
     }
-    .bauble {
-      position: absolute;
-      top: 0;
-    }
-    .b1 {
-      left: 4%;
-    }
-    .b2 {
-      left: 9%;
-    }
-    .b3 {
-      right: 5%;
-    }
-    .hero-inner {
-      position: relative;
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 3.5rem 1rem 3rem;
-      display: grid;
-      gap: 2.5rem;
-      grid-template-columns: 1.15fr 1fr;
-      align-items: center;
-    }
-    .hero-copy {
-      position: relative;
-      padding: 2.5rem 2rem;
-      text-align: center;
-    }
-    .hero-copy .eyebrow {
-      color: var(--gold-light);
-    }
-    h1 {
-      margin: 0.5rem 0 0;
-      color: var(--ivory);
-    }
-    .title {
-      display: block;
-      font-size: clamp(3.4rem, 9vw, 5.6rem);
-      line-height: 1;
-      color: var(--gold-light);
-      text-shadow: 0 2px 0 rgb(0 0 0 / 25%);
-    }
-    .subtitle {
-      display: block;
-      margin-top: 0.4rem;
-      font-family: var(--font-caps);
-      font-size: clamp(0.95rem, 2.2vw, 1.2rem);
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
+    .dot {
+      color: var(--red);
     }
     .lead {
-      font-family: var(--font-serif);
-      font-size: 1.3rem;
-      line-height: 1.45;
-      color: rgb(247 240 225 / 88%);
-      margin: 0;
+      max-width: 34rem;
+      font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+      color: var(--snow-soft);
+      margin: 1.25rem 0 0;
+    }
+    .access {
+      padding-top: 1rem;
+      padding-bottom: 1rem;
     }
     .signin-card {
-      color: var(--ink);
+      max-width: 520px;
       margin: 0;
       padding: 2rem;
-      box-shadow:
-        var(--gold-rule),
-        0 30px 60px -20px rgb(0 0 0 / 55%);
     }
-    .how {
-      text-align: center;
-      padding-top: 1rem;
-    }
-    .how-title {
-      font-size: 3rem;
-      color: var(--gold-light);
+    .section-title {
+      font-size: clamp(2rem, 5vw, 3.2rem);
       margin-bottom: 1.5rem;
     }
-    .doors {
+    .steps {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 2.5rem;
       display: grid;
-      gap: 1.25rem;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      text-align: left;
-      margin-bottom: 2rem;
+      gap: 2rem;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
-    .step-door {
-      height: 240px;
-    }
-    .step-front {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      height: 100%;
-    }
-    .door-n {
-      font-family: var(--font-caps);
-      font-size: 2.6rem;
-      font-weight: 700;
-      color: var(--gold-light);
-      line-height: 1;
-    }
-    .step-front h3 {
-      color: var(--ivory);
-      margin: 0;
-      font-size: 1.5rem;
-    }
-    .step-inside {
-      height: 100%;
-      padding: 1.1rem 1.1rem 1.1rem 30%;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-    .door-icon {
-      font-size: 1.9rem;
-    }
-    .step-inside h3 {
-      color: var(--gold-light);
-      margin: 0.3rem 0;
-      font-size: 1.25rem;
-    }
-    .step-inside p {
-      margin: 0;
-      font-size: 0.9rem;
-      color: rgb(247 240 225 / 88%);
-    }
-    .calendar-hint {
-      margin-top: -0.75rem;
-    }
-    .calendar {
+    .n {
       display: block;
-      margin: 1.25rem 0 2.5rem;
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.05em;
+      color: var(--red);
+      margin-bottom: 0.6rem;
     }
-    .demo {
-      text-align: left;
+    .steps h3 {
+      font-size: 1.35rem;
     }
-    @media (max-width: 800px) {
-      .hero-inner {
-        grid-template-columns: 1fr;
-        padding-top: 2.5rem;
-      }
-      .b2,
-      .b3 {
-        display: none;
-      }
+    .steps p {
+      margin: 0;
     }
   `,
 })
@@ -253,54 +105,25 @@ export class SignInPage {
   /** Bound from the `returnUrl` query parameter. */
   readonly returnUrl = input<string>();
 
-  private readonly doors = viewChild.required<ElementRef<HTMLElement>>('doors');
-  /** The three step doors swing open when they scroll into view. */
-  protected readonly stepsOpen = signal(false);
-
-  constructor() {
-    const destroyRef = inject(DestroyRef);
-    afterNextRender(() => {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          if (entries.some((e) => e.isIntersecting)) {
-            setTimeout(() => this.stepsOpen.set(true), 400);
-            observer.disconnect();
-          }
-        },
-        { threshold: 0.45 },
-      );
-      observer.observe(this.doors().nativeElement);
-      destroyRef.onDestroy(() => observer.disconnect());
-    });
-  }
-
   protected readonly steps = [
     {
-      n: 'I',
-      icon: '✉️',
+      n: '01',
       title: 'Inscription & envies',
-      text: 'Chacun ouvre votre lien, entre son e-mail et dit à son Père Noël secret ce qui lui ferait plaisir.',
+      text: 'Chacun ouvre votre lien, entre son prénom et dit ce qui lui ferait plaisir.',
     },
     {
-      n: 'II',
-      icon: '🤫',
+      n: '02',
       title: 'Exclusions',
       text: 'Une fois la liste fermée, chacun choisit en secret à qui il préfère ne pas offrir.',
     },
     {
-      n: 'III',
-      icon: '🎁',
+      n: '03',
       title: 'Le tirage',
-      text: 'Quand tout le monde a validé, les noms sont tirés au sort et chacun découvre à qui il offre.',
+      text: 'Quand tout le monde a validé, les noms sont tirés et chacun découvre à qui il offre.',
     },
   ];
 
-  target(): string {
-    return safeReturnUrl(this.returnUrl());
-  }
-
   continue(): void {
-    takeNext();
-    void this.router.navigateByUrl(this.target());
+    void this.router.navigateByUrl(safeReturnUrl(this.returnUrl()));
   }
 }

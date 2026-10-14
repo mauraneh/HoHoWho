@@ -22,10 +22,11 @@ export class BackendError extends Error {
   }
 }
 
-export interface SignInLinkResult {
-  /** True when the user is already signed in (demo mode); false when a link was e-mailed. */
-  signedIn: boolean;
-}
+/**
+ * Accounts have no e-mail or password: each person owns a private "personal link" key
+ * (`#/k/<key>`) that signs them in on any device.
+ */
+export type PersonalKey = string;
 
 /**
  * Application data access. Feature code depends only on this contract; the implementation is
@@ -38,18 +39,16 @@ export abstract class HohowhoBackend {
   /** Resolves once a persisted session has been restored. */
   abstract whenReady(): Promise<void>;
 
-  /**
-   * Passwordless sign-in: e-mails a one-click sign-in link. The account is created on first use.
-   * @param displayName shown to other participants; only used when the account is created.
-   * @param next in-app path to open after following the link (e.g. an invitation).
-   */
-  abstract requestSignInLink(
-    email: string,
-    displayName: string,
-    next: string,
-  ): Promise<SignInLinkResult>;
-  /** Error reported by the auth server when a sign-in link failed (expired, already used…). */
-  abstract consumeAuthError(): string | null;
+  /** Creates an account from an invitation link and signs in. Returns the personal key. */
+  abstract joinWithInvitation(displayName: string, invitationToken: string): Promise<PersonalKey>;
+  /** Creates an organiser account with the organiser code and signs in. */
+  abstract signUpAsOrganizer(displayName: string, code: string): Promise<PersonalKey>;
+  /** Signs in with a personal key (from a personal link). */
+  abstract signInWithKey(key: PersonalKey): Promise<void>;
+  /** Issues a new personal key for the current user (the previous link stops working). */
+  abstract resetMyKey(): Promise<PersonalKey>;
+  /** Organiser: issues a new personal key for a participant who lost their link. */
+  abstract resetParticipantKey(participantId: string): Promise<PersonalKey>;
   abstract signOut(): Promise<void>;
 
   /** Whether the current user may create a Secret Santa (organiser role). */

@@ -2,29 +2,27 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HohowhoBackend } from './core/backend/hohowho-backend';
 import { errorMessage, initials } from './core/format';
+import { forgetKey } from './core/personal-link';
 import { DATA_SOURCE } from './core/tokens';
-import { Holly } from './shared/ornaments';
 import { Snowfall } from './shared/snowfall';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Holly, Snowfall],
+  imports: [RouterOutlet, RouterLink, Snowfall],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-snowfall />
     <header class="topbar">
       <div class="topbar-inner">
         <a routerLink="/events" class="brand" aria-label="Accueil HoHoWho">
-          <app-holly [size]="40" />
-          <span class="wordmark">HoHoWho</span>
-          <span class="tagline">Secret Santa</span>
+          <span class="wordmark">HoHoWho<span class="dot">.</span></span>
         </a>
         @if (user(); as u) {
           <nav class="row" aria-label="Compte">
             <a routerLink="/events" class="nav-link">Mes Secret Santa</a>
-            <span class="me" [title]="u.email">
+            <a routerLink="/mon-lien" class="nav-link">Mon lien</a>
+            <span class="me" [title]="u.displayName">
               <span class="avatar" aria-hidden="true">{{ initials(u.displayName) }}</span>
-              <span class="me-name">{{ u.displayName }}</span>
             </span>
             <button type="button" class="btn btn-sm signout" (click)="signOut()">
               Déconnexion
@@ -45,7 +43,6 @@ import { Snowfall } from './shared/snowfall';
     </main>
 
     <footer class="footer muted small">
-      <p class="footer-mark">HoHoWho</p>
       <p>Le Secret Santa entre proches · gratuit et sans pub</p>
       @if (isMock) {
         <p>
@@ -59,102 +56,68 @@ import { Snowfall } from './shared/snowfall';
   `,
   styles: `
     .topbar {
-      position: sticky;
-      top: 0;
+      position: relative;
       z-index: 10;
-      color: var(--ivory);
-      background:
-        repeating-linear-gradient(45deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 10px),
-        linear-gradient(180deg, var(--emerald) 0%, var(--emerald-deep) 100%);
-      box-shadow:
-        0 1px 0 var(--gold),
-        0 4px 0 var(--emerald-deep),
-        0 5px 0 rgb(201 162 90 / 60%),
-        0 10px 24px -12px rgb(0 0 0 / 50%);
     }
     .topbar-inner {
-      max-width: 1040px;
+      max-width: 980px;
       margin: 0 auto;
-      padding: 0.45rem 1rem;
+      padding: 1.1rem 1.25rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 1rem;
     }
     .brand {
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
-      color: var(--gold-light);
+      color: var(--white);
       text-decoration: none;
     }
     .wordmark {
-      font-family: var(--font-script);
-      font-size: 2.2rem;
-      line-height: 1;
-      padding-top: 0.2rem;
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
     }
-    .tagline {
-      font-family: var(--font-caps);
-      font-size: 0.62rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgb(247 240 225 / 65%);
-      margin-left: 0.35rem;
-      padding-left: 0.6rem;
-      border-left: 1px solid rgb(201 162 90 / 50%);
+    .dot {
+      color: var(--red);
+    }
+    nav {
+      flex-wrap: nowrap;
+      gap: 1.1rem;
     }
     .nav-link {
-      color: var(--ivory);
-      font-family: var(--font-caps);
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
+      color: var(--snow-soft);
+      font-weight: 600;
+      font-size: 0.92rem;
       text-decoration: none;
+    }
+    .nav-link:hover {
+      color: var(--white);
     }
     .me {
       display: inline-flex;
       align-items: center;
     }
     .me .avatar {
-      width: 1.9rem;
-      height: 1.9rem;
-      margin-right: 0.4rem;
-    }
-    .me-name {
-      color: var(--gold-light);
-      font-family: var(--font-serif);
-      font-size: 1.1rem;
-      font-weight: 600;
+      width: 2rem;
+      height: 2rem;
+      margin: 0;
+      background: var(--red);
     }
     .signout {
       background: transparent;
-      color: var(--ivory);
-      border-color: rgb(201 162 90 / 60%);
+      color: var(--white);
+      border-color: rgb(255 255 255 / 30%);
     }
-    nav {
-      flex-wrap: nowrap;
+    .signout:hover:not(:disabled) {
+      border-color: var(--white);
     }
     @media (max-width: 600px) {
-      .me-name,
-      .nav-link,
-      .tagline {
-        display: none;
-      }
-      .wordmark {
-        font-size: 1.8rem;
-      }
-      .topbar-inner {
-        gap: 0.5rem;
-      }
-      .brand app-holly,
+      .nav-link:first-child,
       .me {
         display: none;
       }
-      .signout {
-        padding: 0.3rem 0.6rem;
-        font-size: 0.62rem;
+      nav {
+        gap: 0.7rem;
       }
     }
     main,
@@ -164,15 +127,10 @@ import { Snowfall } from './shared/snowfall';
     }
     .footer {
       text-align: center;
-      padding: 2.5rem 1rem 3rem;
+      padding: 3rem 1rem;
     }
     .footer p {
       margin: 0.2rem 0;
-    }
-    .footer-mark {
-      font-family: var(--font-script);
-      font-size: 2.2rem;
-      color: var(--gold-light);
     }
   `,
 })
@@ -185,7 +143,15 @@ export class App {
   protected readonly initials = initials;
 
   async signOut(): Promise<void> {
+    if (
+      !confirm(
+        'Se déconnecter ? Pour revenir, il vous faudra votre lien personnel (menu « Mon lien »).',
+      )
+    ) {
+      return;
+    }
     try {
+      forgetKey();
       await this.backend.signOut();
       await this.router.navigateByUrl('/sign-in');
     } catch (e) {
