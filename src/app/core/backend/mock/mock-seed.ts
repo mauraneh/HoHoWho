@@ -6,6 +6,7 @@ const date = (offsetDays: number) => iso(offsetDays).slice(0, 10);
 
 /**
  * Demo data for local development. Sign in with any of the demo e-mail addresses.
+ * Alice and Bob are organisers (they can create events); everyone else joins via invitations.
  * - "Family Christmas" is open (Alice organises): try invitations, closing the list,
  *   exclusions and the draw (Bob and Carol already filled in their wishes).
  * - "Office Party" is already drawn: try the giftee page, recommendations and messages.
@@ -19,15 +20,16 @@ export function createSeed(): MockDb {
   ];
 
   return {
-    version: 2,
+    version: 3,
+    organizers: ['alice@example.com', 'bob@example.com'],
     sessionUserId: null,
     users,
     events: [
       {
         id: 'e-family',
         ownerId: 'u-alice',
-        name: 'Family Christmas',
-        description: 'Gift exchange at grandma’s house after dinner.',
+        name: 'Noël en famille',
+        description: 'Échange de cadeaux chez mamie après le dîner.',
         eventDate: date(60),
         budgetMin: 20,
         budgetMax: 40,
@@ -39,8 +41,8 @@ export function createSeed(): MockDb {
       {
         id: 'e-office',
         ownerId: 'u-bob',
-        name: 'Office Party',
-        description: 'Secret Santa for the team lunch.',
+        name: 'Repas d’équipe',
+        description: 'Secret Santa pour le déjeuner de Noël du bureau.',
         eventDate: date(30),
         budgetMin: 10,
         budgetMax: 25,
@@ -84,14 +86,14 @@ export function createSeed(): MockDb {
         giftStyles: ['fun', 'practical'],
         avoid: ['clothing'],
         sizes: '',
-        notes: 'Just got into vinyl records.',
+        notes: 'Vient de se mettre aux vinyles.',
       },
       {
         participantId: 'p-family-carol',
         interests: ['plants', 'reading', 'tea'],
         giftStyles: ['cosy', 'eco'],
         avoid: ['alcohol'],
-        sizes: 'Sweaters: M',
+        sizes: 'Pulls : M',
         notes: '',
       },
       {
@@ -99,8 +101,8 @@ export function createSeed(): MockDb {
         interests: ['coffee', 'reading', 'plants'],
         giftStyles: ['practical', 'cosy'],
         avoid: ['alcohol', 'clutter'],
-        sizes: 'Sweaters: M',
-        notes: 'Loves anything green. Currently into mystery novels.',
+        sizes: 'Pulls : M',
+        notes: 'Adore tout ce qui est vert. En ce moment, plongée dans les romans policiers.',
       },
       {
         participantId: 'p-office-alice',
@@ -108,14 +110,14 @@ export function createSeed(): MockDb {
         giftStyles: ['experience', 'consumable'],
         avoid: ['fragrance'],
         sizes: '',
-        notes: 'Vegetarian.',
+        notes: 'Végétarienne.',
       },
       {
         participantId: 'p-office-bob',
         interests: ['gaming', 'tech', 'board-games'],
         giftStyles: ['fun'],
         avoid: [],
-        sizes: 'T-shirts: L',
+        sizes: 'T-shirts : L',
         notes: '',
       },
     ],
@@ -123,9 +125,9 @@ export function createSeed(): MockDb {
       {
         id: 'w-1',
         participantId: 'p-office-carol',
-        title: 'A good mystery novel',
+        title: 'Un bon roman policier',
         url: null,
-        notes: 'Anything by Agatha Christie I have not read yet.',
+        notes: 'Un Agatha Christie que je n’ai pas encore lu.',
         price: 15,
         priority: 1,
         createdAt: iso(-5),
@@ -133,7 +135,7 @@ export function createSeed(): MockDb {
       {
         id: 'w-2',
         participantId: 'p-office-carol',
-        title: 'Small succulent in a ceramic pot',
+        title: 'Petite plante grasse en pot céramique',
         url: null,
         notes: '',
         price: 12,
@@ -147,7 +149,7 @@ export function createSeed(): MockDb {
         eventId: 'e-office',
         receiverId: 'p-office-carol',
         fromSanta: true,
-        body: 'Ho ho ho! Do you prefer paperback or hardcover?',
+        body: 'Ho ho ho ! Tu préfères les livres de poche ou les grands formats ?',
         createdAt: iso(-1),
       },
     ],

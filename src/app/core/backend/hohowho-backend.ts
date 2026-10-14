@@ -52,6 +52,8 @@ export abstract class HohowhoBackend {
   abstract consumeAuthError(): string | null;
   abstract signOut(): Promise<void>;
 
+  /** Whether the current user may create a Secret Santa (organiser role). */
+  abstract canOrganize(): Promise<boolean>;
   abstract listEvents(): Promise<EventSummary[]>;
   abstract createEvent(input: NewEvent): Promise<string>;
   abstract getEvent(eventId: string): Promise<EventDetail>;

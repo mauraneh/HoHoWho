@@ -10,16 +10,19 @@ describe('format helpers', () => {
   });
 
   it('formats budgets', () => {
-    expect(formatBudget(null, null, 'EUR')).toBe('No budget set');
+    expect(formatBudget(null, null, 'EUR')).toBe('Budget libre');
     expect(formatBudget(null, 30, 'EUR')).toContain('30');
     expect(formatBudget(10, 30, 'EUR')).toMatch(/10.*30/);
   });
 
   it('only exposes messages of known errors', () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    expect(errorMessage(new BackendError('Nope'))).toBe('Nope');
-    expect(errorMessage(new Error('internal details'))).toBe(
-      'Something went wrong. Please try again.',
+    expect(errorMessage(new BackendError('Names have already been drawn for this event'))).toBe(
+      'Le tirage a déjà eu lieu pour ce Secret Santa.',
     );
+    expect(errorMessage(new BackendError('Waiting for 2 participant(s) to validate'))).toContain(
+      '2',
+    );
+    expect(errorMessage(new Error('internal details'))).toBe('Une erreur est survenue. Réessayez.');
   });
 });

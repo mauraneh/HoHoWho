@@ -1,4 +1,6 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { registerLocaleData } from '@angular/common';
+import localeFr from '@angular/common/locales/fr';
+import { ApplicationConfig, LOCALE_ID, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideRouter, withComponentInputBinding, withHashLocation } from '@angular/router';
 import { AppEnvironment } from '../environments/environment.model';
 import { routes } from './app.routes';
@@ -7,6 +9,8 @@ import { DATA_SOURCE } from './core/tokens';
 import { GIFT_RECOMMENDATION_PROVIDERS } from './recommendations/recommendation.model';
 import { RuleBasedRecommender } from './recommendations/rule-based-recommender';
 
+registerLocaleData(localeFr);
+
 export function createAppConfig(
   backend: HohowhoBackend,
   environment: AppEnvironment,
@@ -14,6 +18,7 @@ export function createAppConfig(
   return {
     providers: [
       provideBrowserGlobalErrorListeners(),
+      { provide: LOCALE_ID, useValue: 'fr' },
       // Hash URLs (#/events/…) work on any static host (GitHub Pages, S3, Netlify…) without
       // server-side rewrites, and survive page reloads and deep links.
       provideRouter(routes, withHashLocation(), withComponentInputBinding()),

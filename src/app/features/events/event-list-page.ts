@@ -7,9 +7,9 @@ import { EventStatus, EventSummary } from '../../core/models';
 import { Divider } from '../../shared/ornaments';
 
 const PHASES: Record<EventStatus, { label: string; css: string }> = {
-  open: { label: 'Joining & wishes', css: 'badge-gold' },
+  open: { label: 'Inscriptions & envies', css: 'badge-gold' },
   exclusions: { label: 'Exclusions', css: 'badge-red' },
-  drawn: { label: 'Names drawn', css: 'badge-green' },
+  drawn: { label: 'Tirage effectué', css: 'badge-green' },
 };
 
 @Component({
@@ -19,8 +19,8 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
   template: `
     <div class="container">
       <header class="page-head center">
-        <span class="eyebrow">Your Secret Santas</span>
-        <h1 class="script page-title">My events</h1>
+        <span class="eyebrow">Vos Secret Santa</span>
+        <h1 class="script page-title">Mes Secret Santa</h1>
         <app-divider />
       </header>
 
@@ -47,24 +47,31 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
                 <span class="row">
                   <span class="badge" [class]="phase(event).css">{{ phase(event).label }}</span>
                   @if (event.isOwner) {
-                    <span class="badge badge-gold">★ Organiser</span>
+                    <span class="badge badge-gold">★ Organisateur</span>
                   }
                 </span>
               </span>
             </a>
           }
-          <a routerLink="/events/new" class="door new-door">
-            <span class="plus" aria-hidden="true">＋</span>
-            <span class="caps">New Secret Santa</span>
-          </a>
+          @if (canOrganize()) {
+            <a routerLink="/events/new" class="door new-door">
+              <span class="plus" aria-hidden="true">＋</span>
+              <span class="caps">Nouveau Secret Santa</span>
+            </a>
+          }
         </div>
         @if (list.length === 0) {
           <p class="muted center empty-hint">
-            No Secret Santa yet: create one, or open an invitation link from a friend.
+            @if (canOrganize()) {
+              Aucun Secret Santa pour l’instant : créez-en un et partagez le lien d’invitation.
+            } @else {
+              Vous ne participez encore à aucun Secret Santa. Ouvrez le lien d’invitation que
+              l’organisateur vous a envoyé.
+            }
           </p>
         }
       } @else {
-        <p class="muted center">Loading your events…</p>
+        <p class="muted center">Chargement…</p>
       }
     </div>
   `,
@@ -175,10 +182,16 @@ export class EventListPage implements OnInit {
   private readonly backend = inject(HohowhoBackend);
   protected readonly events = signal<EventSummary[] | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly canOrganize = signal(false);
 
   async ngOnInit(): Promise<void> {
     try {
-      this.events.set(await this.backend.listEvents());
+      const [events, canOrganize] = await Promise.all([
+        this.backend.listEvents(),
+        this.backend.canOrganize(),
+      ]);
+      this.canOrganize.set(canOrganize);
+      this.events.set(events);
     } catch (e) {
       this.error.set(errorMessage(e));
       this.events.set([]);

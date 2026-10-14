@@ -221,6 +221,12 @@ export class SupabaseBackend extends HohowhoBackend {
     if (error) throw new BackendError(error.message);
   }
 
+  async canOrganize(): Promise<boolean> {
+    const { data, error } = await this.client.rpc('can_organize');
+    if (error) fail(error);
+    return data === true;
+  }
+
   async listEvents(): Promise<EventSummary[]> {
     const me = this.requireUser();
     const { data, error } = await this.client

@@ -2,7 +2,9 @@ import { GiftEvent, Participant, Questionnaire, WishlistItem } from '../../model
 
 /** Shape of the local development database persisted in localStorage. */
 export interface MockDb {
-  version: 2;
+  version: 3;
+  /** E-mails allowed to create events (empty = everyone). */
+  organizers: string[];
   sessionUserId: string | null;
   users: { id: string; email: string; displayName: string }[];
   events: GiftEvent[];

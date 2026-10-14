@@ -315,6 +315,18 @@ select tests.assert((select count(*) from public.messages) = 0, 'outsider reads 
 select tests.expect_error($$select * from public.preview_invitation((select value from tests.ctx where key = 'token'))$$,
                           'invitation unusable after the draw');
 
+-- Organiser role --------------------------------------------------------------------------------
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000e';
+select tests.assert(public.can_organize(), 'anyone organises while the organiser list is empty');
+select tests.expect_error($$select * from public.organizers$$, 'organiser list is not readable by clients');
+reset role;
+insert into public.organizers (email) values ('alice@example.com');
+set role authenticated;
+select tests.assert(not public.can_organize(), 'non-organiser cannot organise');
+select tests.expect_error($$select public.create_event('Not allowed')$$, 'non-organiser cannot create events');
+set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
+select tests.assert(public.can_organize(), 'listed organiser can organise');
+
 -- Owner deletes the event: everything cascades ------------------------------------------------------
 set request.jwt.claim.sub = '00000000-0000-0000-0000-00000000000a';
 select tests.assert(tests.affected($$delete from public.events$$) = 1, 'owner deletes the event');

@@ -12,6 +12,15 @@ export const authGuard: CanActivateFn = async (_route, state) => {
     : router.createUrlTree(['/sign-in'], { queryParams: { returnUrl: state.url } });
 };
 
+/** Only organisers may open the "new Secret Santa" page. */
+export const organizerGuard: CanActivateFn = async () => {
+  const backend = inject(HohowhoBackend);
+  const router = inject(Router);
+  return (await backend.canOrganize().catch(() => false))
+    ? true
+    : router.createUrlTree(['/events']);
+};
+
 /** Keeps signed-in users away from the sign-in page. */
 export const guestGuard: CanActivateFn = async () => {
   const backend = inject(HohowhoBackend);

@@ -26,19 +26,19 @@ import { EventStore } from './event-store';
           <p>
             {{
               d.event.status === 'drawn'
-                ? 'Names have already been drawn.'
-                : 'This step opens when the organiser closes the list.'
+                ? 'Le tirage a déjà eu lieu.'
+                : 'Cette étape s’ouvre quand l’organisateur ferme la liste.'
             }}
           </p>
         </div>
       } @else {
         <section class="card">
-          <span class="eyebrow">Step 2 · Private</span>
-          <h2>Anyone you'd rather not give a gift to?</h2>
+          <span class="eyebrow">Étape 2 · En secret</span>
+          <h2>Quelqu’un à qui vous préférez ne pas offrir ?</h2>
           <p class="muted">
-            Tick the people you don't want to draw — or nobody.
-            <strong>Nobody will ever see your choices</strong>, not even the organiser. You can
-            change them until the draw.
+            Cochez les personnes que vous ne voulez pas tirer au sort, ou personne.
+            <strong>Personne ne verra jamais vos choix</strong>, pas même l’organisateur. Vous
+            pouvez les modifier jusqu’au tirage.
           </p>
 
           @if (error(); as e) {
@@ -46,7 +46,7 @@ import { EventStore } from './event-store';
           }
 
           @if (loaded()) {
-            <div class="people" role="group" aria-label="People to exclude">
+            <div class="people" role="group" aria-label="Personnes à exclure">
               @for (p of others(); track p.id) {
                 <label
                   class="person"
@@ -69,7 +69,7 @@ import { EventStore } from './event-store';
             </div>
             @if (limitReached()) {
               <p class="muted small">
-                You must leave at least one person you could give a gift to.
+                Vous devez laisser au moins une personne à qui vous pourriez offrir un cadeau.
               </p>
             }
 
@@ -82,18 +82,18 @@ import { EventStore } from './event-store';
               >
                 {{
                   busy()
-                    ? 'Saving…'
+                    ? 'Enregistrement…'
                     : selected().size === 0
-                      ? "✓ I'm happy with anyone"
-                      : '✓ Validate my choices'
+                      ? '✓ N’importe qui me va'
+                      : '✓ Valider mes choix'
                 }}
               </button>
               @if (d.me.exclusionsConfirmed) {
-                <span class="badge badge-green">Validated</span>
+                <span class="badge badge-green">Validé</span>
               }
             </div>
           } @else {
-            <p class="muted">Loading…</p>
+            <p class="muted">Chargement…</p>
           }
         </section>
       }
@@ -215,7 +215,7 @@ export class ExclusionsPage {
             await this.router.navigate(['/events', eventId, 'giftee']);
             return;
           }
-          this.error.set(`Everyone has validated, but the draw failed: ${errorMessage(e)}`);
+          this.error.set(`Tout le monde a validé, mais le tirage a échoué : ${errorMessage(e)}`);
           return;
         }
       }

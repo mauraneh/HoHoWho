@@ -18,7 +18,7 @@ import { BackendError, HohowhoBackend, SignInLinkResult } from '../hohowho-backe
 import { MockDb } from './mock-db';
 import { createSeed } from './mock-seed';
 
-export const MOCK_STORAGE_KEY = 'hohowho.mock-db.v2';
+export const MOCK_STORAGE_KEY = 'hohowho.mock-db.v3';
 const INVITATION_DAYS = 14;
 
 const clone = <T>(value: T): T => structuredClone(value);
@@ -66,7 +66,7 @@ export class MockBackend extends HohowhoBackend {
       const raw = this.storage.getItem(MOCK_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as MockDb;
-        if (parsed.version === 2) return parsed;
+        if (parsed.version === 3) return parsed;
       }
     } catch {
       // Corrupted or unavailable storage: fall back to the seed.
@@ -182,6 +182,15 @@ export class MockBackend extends HohowhoBackend {
 
   // --- events ----------------------------------------------------------------------------------
 
+  canOrganize(): Promise<boolean> {
+    return this.tick(() => this.isOrganizer());
+  }
+
+  private isOrganizer(): boolean {
+    const email = this.user()?.email;
+    return !!email && (this.db.organizers.length === 0 || this.db.organizers.includes(email));
+  }
+
   listEvents(): Promise<EventSummary[]> {
     return this.tick(() => {
       const uid = this.uid();
@@ -195,6 +204,7 @@ export class MockBackend extends HohowhoBackend {
   createEvent(input: NewEvent): Promise<string> {
     return this.tick(() => {
       const uid = this.uid();
+      if (!this.isOrganizer()) throw new BackendError('Only organisers can create a Secret Santa');
       const name = input.name.trim();
       if (!name || name.length > 80)
         throw new BackendError('Some values are invalid. Please check the form.');

@@ -19,20 +19,20 @@ import { SignInForm } from './sign-in-form';
       <div class="hero-inner">
         <div class="hero-copy">
           <app-corners />
-          <span class="eyebrow">Est. 2026 · Free &amp; ad-free</span>
+          <span class="eyebrow">Depuis 2026 · Gratuit &amp; sans pub</span>
           <h1>
             <span class="script title">Secret Santa</span>
-            <span class="subtitle">Who gifts who this year?</span>
+            <span class="subtitle">Qui gâte qui cette année ?</span>
           </h1>
           <app-divider />
           <p class="lead">
-            Share one link, let everyone tell their wishes, close the list, and HoHoWho draws the
-            names. Fair, secret, and wonderfully simple.
+            Un seul lien à partager : chacun donne ses envies, vous fermez la liste et HoHoWho tire
+            les noms au sort. Équitable, secret et tout simple.
           </p>
         </div>
         <div class="card signin-card">
-          <span class="eyebrow">Start or join</span>
-          <h2>Your invitation awaits</h2>
+          <span class="eyebrow">Organiser ou participer</span>
+          <h2>Votre invitation vous attend</h2>
           <app-sign-in-form [next]="target()" (signedIn)="continue()" />
         </div>
       </div>
@@ -41,8 +41,8 @@ import { SignInForm } from './sign-in-form';
     <app-bow-ribbon />
 
     <section class="container how">
-      <span class="eyebrow">How it works</span>
-      <h2 class="script how-title">Three little doors</h2>
+      <span class="eyebrow">Comment ça marche</span>
+      <h2 class="script how-title">Trois petites portes</h2>
       <div class="doors">
         @for (step of steps; track step.n) {
           <article class="door card-crimson">
@@ -56,9 +56,9 @@ import { SignInForm } from './sign-in-form';
 
       @if (isMock) {
         <div class="card small demo">
-          <strong>Demo accounts:</strong> <code>alice&#64;example.com</code> (organiser),
+          <strong>Comptes de démo :</strong> <code>alice&#64;example.com</code> (organisatrice),
           <code>bob&#64;example.com</code>, <code>carol&#64;example.com</code>,
-          <code>dave&#64;example.com</code> — or any e-mail.
+          <code>dave&#64;example.com</code>, ou n’importe quel e-mail.
         </div>
       }
     </section>
@@ -209,20 +209,20 @@ export class SignInPage {
     {
       n: 'I',
       icon: '✉️',
-      title: 'Join & wish',
-      text: 'Everyone opens your link, enters their e-mail and tells their Santa what they’d love.',
+      title: 'Inscription & envies',
+      text: 'Chacun ouvre votre lien, entre son e-mail et dit à son Père Noël secret ce qui lui ferait plaisir.',
     },
     {
       n: 'II',
       icon: '🤫',
       title: 'Exclusions',
-      text: 'Once the list is closed, each person quietly picks who they’d rather not gift.',
+      text: 'Une fois la liste fermée, chacun choisit en secret à qui il préfère ne pas offrir.',
     },
     {
       n: 'III',
       icon: '🎁',
-      title: 'The draw',
-      text: 'When everyone has validated, names are drawn and each discovers their giftee.',
+      title: 'Le tirage',
+      text: 'Quand tout le monde a validé, les noms sont tirés au sort et chacun découvre à qui il offre.',
     },
   ];
 

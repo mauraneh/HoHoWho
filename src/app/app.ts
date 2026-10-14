@@ -12,19 +12,21 @@ import { Holly } from './shared/ornaments';
   template: `
     <header class="topbar">
       <div class="topbar-inner">
-        <a routerLink="/events" class="brand" aria-label="HoHoWho home">
+        <a routerLink="/events" class="brand" aria-label="Accueil HoHoWho">
           <app-holly [size]="40" />
           <span class="wordmark">HoHoWho</span>
           <span class="tagline">Secret Santa</span>
         </a>
         @if (user(); as u) {
-          <nav class="row" aria-label="Account">
-            <a routerLink="/events" class="nav-link">My events</a>
+          <nav class="row" aria-label="Compte">
+            <a routerLink="/events" class="nav-link">Mes Secret Santa</a>
             <span class="me" [title]="u.email">
               <span class="avatar" aria-hidden="true">{{ initials(u.displayName) }}</span>
               <span class="me-name">{{ u.displayName }}</span>
             </span>
-            <button type="button" class="btn btn-sm signout" (click)="signOut()">Sign out</button>
+            <button type="button" class="btn btn-sm signout" (click)="signOut()">
+              Déconnexion
+            </button>
           </nav>
         }
       </div>
@@ -42,11 +44,13 @@ import { Holly } from './shared/ornaments';
 
     <footer class="footer muted small">
       <p class="footer-mark">HoHoWho</p>
-      <p>The secret Secret Santa · free & ad-free</p>
+      <p>Le Secret Santa entre proches · gratuit et sans pub</p>
       @if (isMock) {
         <p>
-          Demo mode: data lives only in this browser.
-          <button type="button" class="link-btn" (click)="resetDemo()">Reset demo data</button>
+          Mode démo : les données restent dans ce navigateur.
+          <button type="button" class="link-btn" (click)="resetDemo()">
+            Réinitialiser la démo
+          </button>
         </p>
       }
     </footer>

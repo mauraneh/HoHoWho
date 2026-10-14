@@ -1,5 +1,6 @@
 import { BackendError } from '../hohowho-backend';
-import { MockBackend } from './mock-backend';
+import { MOCK_STORAGE_KEY, MockBackend } from './mock-backend';
+import { createSeed } from './mock-seed';
 
 class MemoryStorage implements Storage {
   private data = new Map<string, string>();
@@ -56,7 +57,27 @@ describe('MockBackend', () => {
     expect(restored.currentUser()?.email).toBe('alice@example.com');
   });
 
+  it('only lets organisers create a Secret Santa', async () => {
+    await as('carol@example.com');
+    expect(await backend.canOrganize()).toBe(false);
+    await expect(
+      backend.createEvent({
+        name: 'Nope',
+        description: '',
+        eventDate: null,
+        budgetMin: null,
+        budgetMax: null,
+        currency: 'EUR',
+      }),
+    ).rejects.toThrow(/Only organisers/);
+    await as('alice@example.com');
+    expect(await backend.canOrganize()).toBe(true);
+  });
+
   it('runs the full flow: join, wishes, close, exclusions, automatic draw', async () => {
+    // Empty organiser list: anyone may organise.
+    storage.setItem(MOCK_STORAGE_KEY, JSON.stringify({ ...createSeed(), organizers: [] }));
+    backend = new MockBackend(storage, 0);
     await as('zoe@example.com', 'Zoe');
     const eventId = await backend.createEvent({
       name: 'Book club',
@@ -196,7 +217,7 @@ describe('MockBackend', () => {
     await as('carol@example.com');
     const thread = await backend.listMessages('e-office', 'p-office-carol');
     expect(thread.map((m) => m.body)).toEqual([
-      'Ho ho ho! Do you prefer paperback or hardcover?',
+      'Ho ho ho ! Tu préfères les livres de poche ou les grands formats ?',
       'Paperback?',
     ]);
     expect(Object.keys(thread[0]).sort()).toEqual(['body', 'createdAt', 'fromSanta', 'id']);

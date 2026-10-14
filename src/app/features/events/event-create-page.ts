@@ -36,49 +36,51 @@ function budgetRange(group: AbstractControl): ValidationErrors | null {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container narrow">
-      <p><a routerLink="/events">← My events</a></p>
-      <h1>New Secret Santa</h1>
+      <p><a routerLink="/events">← Mes Secret Santa</a></p>
+      <h1>Nouveau Secret Santa</h1>
       <div class="card">
         @if (error(); as e) {
           <div class="alert alert-error" role="alert">{{ e }}</div>
         }
         <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="field">
-            <label for="name">Event name</label>
+            <label for="name">Nom du Secret Santa</label>
             <input
               id="name"
               formControlName="name"
               maxlength="80"
-              placeholder="Family Christmas 2026"
+              placeholder="Noël en famille 2026"
             />
             @if (form.controls.name.touched && form.controls.name.invalid) {
-              <span class="error">Please give your event a name (max. 80 characters).</span>
+              <span class="error">Donnez un nom à votre Secret Santa (80 caractères max.).</span>
             }
           </div>
           <div class="field">
-            <label for="description">Description <span class="muted">(optional)</span></label>
+            <label for="description">Description <span class="muted">(facultatif)</span></label>
             <textarea
               id="description"
               formControlName="description"
               maxlength="1000"
-              placeholder="Where and when you will exchange gifts, dress code…"
+              placeholder="Où et quand vous échangerez les cadeaux, thème, dress code…"
             ></textarea>
           </div>
           <div class="field">
-            <label for="eventDate">Gift exchange date <span class="muted">(optional)</span></label>
+            <label for="eventDate"
+              >Date de l’échange des cadeaux <span class="muted">(facultatif)</span></label
+            >
             <input id="eventDate" type="date" formControlName="eventDate" />
           </div>
           <div class="field-row">
             <div class="field">
-              <label for="budgetMin">Minimum budget</label>
+              <label for="budgetMin">Budget minimum</label>
               <input id="budgetMin" type="number" min="0" step="1" formControlName="budgetMin" />
             </div>
             <div class="field">
-              <label for="budgetMax">Maximum budget</label>
+              <label for="budgetMax">Budget maximum</label>
               <input id="budgetMax" type="number" min="0" step="1" formControlName="budgetMax" />
             </div>
             <div class="field">
-              <label for="currency">Currency</label>
+              <label for="currency">Devise</label>
               <select id="currency" formControlName="currency">
                 @for (c of currencies; track c) {
                   <option [value]="c">{{ c }}</option>
@@ -87,10 +89,10 @@ function budgetRange(group: AbstractControl): ValidationErrors | null {
             </div>
           </div>
           @if (form.hasError('budgetRange')) {
-            <p class="error small">The minimum budget cannot exceed the maximum.</p>
+            <p class="error small">Le budget minimum ne peut pas dépasser le maximum.</p>
           }
           <button type="submit" class="btn btn-primary" [disabled]="busy()">
-            {{ busy() ? 'Creating…' : 'Create event' }}
+            {{ busy() ? 'Création…' : 'Créer le Secret Santa' }}
           </button>
         </form>
       </div>

@@ -15,9 +15,9 @@ import { AVOID, GIFT_STYLES, INTERESTS, Option } from '../../recommendations/que
 import { EventStore } from './event-store';
 
 const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
-  1: 'Would love it',
-  2: 'Would like it',
-  3: 'Nice to have',
+  1: 'J’adorerais',
+  2: 'J’aimerais bien',
+  3: 'Pourquoi pas',
 };
 
 @Component({
@@ -30,15 +30,15 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
     }
 
     <section class="card">
-      <h2>About me</h2>
+      <h2>Mes envies</h2>
       <p class="muted small">
-        Only you and your Secret Santa can see these answers. They power the gift ideas your Santa
-        receives.
+        Seuls vous et votre Père Noël secret voyez ces réponses. Elles servent aux idées cadeaux qui
+        lui sont proposées.
       </p>
 
       @if (loaded()) {
         <fieldset class="field">
-          <legend>What are you into?</legend>
+          <legend>Qu’est-ce qui vous plaît ?</legend>
           <div class="chips">
             @for (o of interests; track o.id) {
               <label class="chip-toggle">
@@ -54,7 +54,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
         </fieldset>
 
         <fieldset class="field">
-          <legend>What kind of gifts make you happy?</legend>
+          <legend>Quel genre de cadeaux vous fait plaisir ?</legend>
           <div class="chips">
             @for (o of giftStyles; track o.id) {
               <label class="chip-toggle">
@@ -70,7 +70,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
         </fieldset>
 
         <fieldset class="field">
-          <legend>Please avoid</legend>
+          <legend>À éviter</legend>
           <div class="chips">
             @for (o of avoid; track o.id) {
               <label class="chip-toggle">
@@ -86,25 +86,23 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
         </fieldset>
 
         <div class="field">
-          <label for="sizes">Sizes <span class="muted">(optional)</span></label>
+          <label for="sizes">Tailles <span class="muted">(facultatif)</span></label>
           <input
             id="sizes"
             maxlength="200"
             [value]="answers().sizes"
             (input)="setText('sizes', $event)"
-            placeholder="T-shirt M, shoes 39…"
+            placeholder="T-shirt M, pointure 39…"
           />
         </div>
         <div class="field">
-          <label for="notes"
-            >Anything else your Santa should know? <span class="muted">(optional)</span></label
-          >
+          <label for="notes">Autre chose à savoir ? <span class="muted">(facultatif)</span></label>
           <textarea
             id="notes"
             maxlength="1000"
             [value]="answers().notes"
             (input)="setText('notes', $event)"
-            placeholder="Favourite colours, allergies, things you already have…"
+            placeholder="Couleurs préférées, allergies, ce que vous avez déjà…"
           ></textarea>
         </div>
 
@@ -115,19 +113,19 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
             [disabled]="saving()"
             (click)="saveAnswers()"
           >
-            {{ saving() ? 'Saving…' : 'Save my answers' }}
+            {{ saving() ? 'Enregistrement…' : 'Enregistrer mes envies' }}
           </button>
           @if (saved()) {
-            <span class="muted small" role="status">Saved ✓</span>
+            <span class="muted small" role="status">Enregistré ✓</span>
           }
         </div>
       } @else {
-        <p class="muted">Loading…</p>
+        <p class="muted">Chargement…</p>
       }
     </section>
 
     <section class="card">
-      <h2>My wishlist</h2>
+      <h2>Ma liste de souhaits</h2>
       @if (wishlist().length) {
         <ul class="list">
           @for (item of wishlist(); track item.id) {
@@ -143,57 +141,63 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
                 }
                 @if (item.url) {
                   <div class="small">
-                    <a [href]="item.url" target="_blank" rel="noopener noreferrer">View link ↗</a>
+                    <a [href]="item.url" target="_blank" rel="noopener noreferrer"
+                      >Voir le lien ↗</a
+                    >
                   </div>
                 }
               </div>
               <button type="button" class="btn btn-sm btn-danger" (click)="removeItem(item)">
-                Remove
+                Retirer
               </button>
             </li>
           }
         </ul>
       } @else {
-        <p class="muted">Your wishlist is empty. Add a few ideas to help your Santa.</p>
+        <p class="muted">
+          Votre liste est vide. Ajoutez quelques idées pour aider votre Père Noël secret.
+        </p>
       }
 
       <form [formGroup]="itemForm" (ngSubmit)="addItem()" class="add-item" novalidate>
-        <h3>Add a wish</h3>
+        <h3>Ajouter un souhait</h3>
         <div class="field">
-          <label for="title">What would you like?</label>
+          <label for="title">Qu’aimeriez-vous ?</label>
           <input id="title" formControlName="title" maxlength="120" />
         </div>
         <div class="field-row">
           <div class="field">
-            <label for="price">Approx. price</label>
+            <label for="price">Prix approximatif</label>
             <input id="price" type="number" min="0" formControlName="price" />
           </div>
           <div class="field">
-            <label for="priority">How much?</label>
+            <label for="priority">À quel point ?</label>
             <select id="priority" formControlName="priority">
-              <option [ngValue]="1">Would love it</option>
-              <option [ngValue]="2">Would like it</option>
-              <option [ngValue]="3">Nice to have</option>
+              <option [ngValue]="1">J’adorerais</option>
+              <option [ngValue]="2">J’aimerais bien</option>
+              <option [ngValue]="3">Pourquoi pas</option>
             </select>
           </div>
         </div>
         <div class="field">
-          <label for="url">Link <span class="muted">(optional)</span></label>
+          <label for="url">Lien <span class="muted">(facultatif)</span></label>
           <input id="url" type="url" formControlName="url" placeholder="https://…" />
           @if (itemForm.controls.url.touched && itemForm.controls.url.invalid) {
-            <span class="error">Links must start with http:// or https://</span>
+            <span class="error">Le lien doit commencer par http:// ou https://</span>
           }
         </div>
         <div class="field">
-          <label for="itemNotes">Notes <span class="muted">(optional)</span></label>
+          <label for="itemNotes">Précisions <span class="muted">(facultatif)</span></label>
           <input
             id="itemNotes"
             formControlName="notes"
             maxlength="500"
-            placeholder="Colour, size, model…"
+            placeholder="Couleur, taille, modèle…"
           />
         </div>
-        <button type="submit" class="btn btn-green" [disabled]="adding()">Add to wishlist</button>
+        <button type="submit" class="btn btn-green" [disabled]="adding()">
+          Ajouter à ma liste
+        </button>
       </form>
     </section>
   `,

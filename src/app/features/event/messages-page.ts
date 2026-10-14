@@ -28,9 +28,11 @@ import { MessageThread } from './message-thread';
             [eventId]="d.event.id"
             [receiverId]="g.id"
             role="santa"
-            [heading]="'To ' + g.displayName"
+            [heading]="'À ' + g.displayName"
             [hint]="
-              'You write as “Your Secret Santa”: ' + g.displayName + ' will not see your name.'
+              'Vous écrivez en tant que « Ton Père Noël secret » : ' +
+              g.displayName +
+              ' ne verra pas votre nom.'
             "
             [otherName]="g.displayName"
           />
@@ -39,9 +41,9 @@ import { MessageThread } from './message-thread';
           [eventId]="d.event.id"
           [receiverId]="d.me.id"
           role="giftee"
-          heading="From my Secret Santa"
-          hint="Your Santa knows who you are, you don’t know who they are. Ask away!"
-          otherName="Your Secret Santa"
+          heading="De mon Père Noël secret"
+          hint="Votre Père Noël secret sait qui vous êtes, vous ne savez pas qui il est. Posez-lui vos questions !"
+          otherName="Ton Père Noël secret"
         />
       </div>
     }

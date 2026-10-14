@@ -19,7 +19,7 @@ import { EventStore } from './event-store';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container">
-      <a routerLink="/events" class="back">← My events</a>
+      <a routerLink="/events" class="back">← Mes Secret Santa</a>
 
       @if (store.error(); as e) {
         <div class="alert alert-error" role="alert">{{ e }}</div>
@@ -35,7 +35,7 @@ import { EventStore } from './event-store';
             <app-divider />
             <div class="meta">
               <span>{{
-                d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date to be decided'
+                d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date à définir'
               }}</span>
               <span aria-hidden="true">✦</span>
               <span>{{ budget() }}</span>
@@ -52,28 +52,28 @@ import { EventStore } from './event-store';
           </div>
         </header>
 
-        <nav class="tabs" aria-label="Event sections">
+        <nav class="tabs" aria-label="Sections">
           <a routerLink="." routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"
-            >Overview</a
+            >Aperçu</a
           >
-          <a routerLink="wishes" routerLinkActive="active">My wishes</a>
+          <a routerLink="wishes" routerLinkActive="active">Mes envies</a>
           @if (d.event.status === 'exclusions') {
             <a routerLink="exclusions" routerLinkActive="active">
               Exclusions
               @if (!d.me.exclusionsConfirmed) {
-                <span class="dot" aria-label="to do"></span>
+                <span class="dot" aria-label="à faire"></span>
               }
             </a>
           }
           @if (d.event.status === 'drawn') {
-            <a routerLink="giftee" routerLinkActive="active">🎁 My giftee</a>
+            <a routerLink="giftee" routerLinkActive="active">🎁 Mon tirage</a>
             <a routerLink="messages" routerLinkActive="active">Messages</a>
           }
         </nav>
 
         <router-outlet />
       } @else if (!store.error()) {
-        <p class="muted">Loading event…</p>
+        <p class="muted">Chargement…</p>
       }
     </div>
   `,

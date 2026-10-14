@@ -25,17 +25,17 @@ import { SignInForm } from '../auth/sign-in-form';
       @if (error(); as e) {
         <div class="card invite">
           <div class="big-icon" aria-hidden="true">🔒</div>
-          <h1>Invitation unavailable</h1>
+          <h1>Invitation indisponible</h1>
           <p class="muted">{{ e }}</p>
-          <p class="muted small">Ask the organiser for a new link.</p>
-          <a routerLink="/events" class="btn">Go to my events</a>
+          <p class="muted small">Demandez un nouveau lien à l’organisateur.</p>
+          <a routerLink="/events" class="btn">Mes Secret Santa</a>
         </div>
       } @else if (preview(); as p) {
         <div class="card card-night invite">
           <div class="snow" aria-hidden="true"></div>
           <app-corners />
-          <span class="script kicker">You are invited</span>
-          <span class="eyebrow">{{ p.ownerName }} invites you to the Secret Santa</span>
+          <span class="script kicker">Vous êtes invité·e</span>
+          <span class="eyebrow">{{ p.ownerName }} vous invite au Secret Santa</span>
           <h1>{{ p.eventName }}</h1>
           <app-divider />
           @if (p.eventDate) {
@@ -46,34 +46,39 @@ import { SignInForm } from '../auth/sign-in-form';
 
         <div class="card">
           @if (!user()) {
-            <h2>Join in 1 minute</h2>
+            <h2>Rejoindre en 1 minute</h2>
             <p class="muted small">
-              Enter your name and e-mail. You'll then tell your Secret Santa what you'd like.
+              Indiquez votre prénom et votre e-mail. Vous direz ensuite à votre Père Noël secret ce
+              qui vous ferait plaisir.
             </p>
             <app-sign-in-form
               [next]="'/join/' + token()"
-              submitLabel="Join the Secret Santa 🎁"
+              submitLabel="Rejoindre le Secret Santa 🎁"
               (signedIn)="load(token())"
             />
           } @else if (p.alreadyMember) {
-            <h2>You're in! 🎉</h2>
-            <p class="muted">You're already taking part.</p>
-            <a [routerLink]="['/events', p.eventId]" class="btn btn-primary">Open the event</a>
+            <h2>Vous en êtes ! 🎉</h2>
+            <p class="muted">Vous participez déjà.</p>
+            <a [routerLink]="['/events', p.eventId]" class="btn btn-primary"
+              >Ouvrir le Secret Santa</a
+            >
           } @else {
-            <h2>Hi {{ user()!.displayName }} 👋</h2>
-            <p class="muted">Join, then tell your Secret Santa what kind of gift you'd love.</p>
+            <h2>Bonjour {{ user()!.displayName }} 👋</h2>
+            <p class="muted">
+              Rejoignez, puis dites à votre Père Noël secret quel cadeau vous ferait plaisir.
+            </p>
             <button
               type="button"
               class="btn btn-primary btn-lg btn-block"
               [disabled]="busy()"
               (click)="join()"
             >
-              {{ busy() ? 'Joining…' : 'Join the Secret Santa 🎁' }}
+              {{ busy() ? 'Inscription…' : 'Rejoindre le Secret Santa 🎁' }}
             </button>
           }
         </div>
       } @else {
-        <p class="muted center">Opening your invitation…</p>
+        <p class="muted center">Ouverture de votre invitation…</p>
       }
     </div>
   `,

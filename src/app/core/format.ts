@@ -1,14 +1,15 @@
 import { BackendError } from './backend/hohowho-backend';
+import { GENERIC_ERROR, translateError } from './error-messages';
 
 export function errorMessage(error: unknown): string {
-  if (error instanceof BackendError) return error.message;
+  if (error instanceof BackendError) return translateError(error.message);
   console.error(error);
-  return 'Something went wrong. Please try again.';
+  return GENERIC_ERROR;
 }
 
 export function formatMoney(amount: number, currency: string): string {
   try {
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
       currency,
       maximumFractionDigits: Number.isInteger(amount) ? 0 : 2,
@@ -24,9 +25,9 @@ export function formatBudget(min: number | null, max: number | null, currency: s
       ? formatMoney(max, currency)
       : `${formatMoney(min, currency)} – ${formatMoney(max, currency)}`;
   }
-  if (max !== null) return `Up to ${formatMoney(max, currency)}`;
-  if (min !== null) return `From ${formatMoney(min, currency)}`;
-  return 'No budget set';
+  if (max !== null) return `Jusqu’à ${formatMoney(max, currency)}`;
+  if (min !== null) return `À partir de ${formatMoney(min, currency)}`;
+  return 'Budget libre';
 }
 
 /** Only allow navigating back to in-app paths (prevents open redirects through ?returnUrl=). */

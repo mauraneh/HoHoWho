@@ -26,7 +26,7 @@ const REFRESH_MS = 20_000;
       <div class="spread">
         <h2>{{ heading() }}</h2>
         <button type="button" class="btn btn-sm" (click)="refresh()" [disabled]="loading()">
-          Refresh
+          Actualiser
         </button>
       </div>
       <p class="muted small">{{ hint() }}</p>
@@ -40,11 +40,11 @@ const REFRESH_MS = 20_000;
           <li [class.mine]="isMine(m)">
             <div class="bubble">{{ m.body }}</div>
             <div class="meta">
-              {{ isMine(m) ? 'You' : otherName() }} · {{ m.createdAt | date: 'short' }}
+              {{ isMine(m) ? 'Vous' : otherName() }} · {{ m.createdAt | date: 'short' }}
             </div>
           </li>
         } @empty {
-          <li class="muted small empty-thread">No messages yet.</li>
+          <li class="muted small empty-thread">Pas encore de message.</li>
         }
       </ol>
 
@@ -56,10 +56,10 @@ const REFRESH_MS = 20_000;
           [(ngModel)]="draft"
           maxlength="2000"
           rows="2"
-          placeholder="Write a message…"
+          placeholder="Écrire un message…"
         ></textarea>
         <button type="submit" class="btn btn-primary" [disabled]="sending() || !draft.trim()">
-          Send
+          Envoyer
         </button>
       </form>
     </section>

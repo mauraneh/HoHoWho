@@ -27,25 +27,25 @@ import { EventStore } from './event-store';
     }
 
     @if (loading()) {
-      <p class="muted">Loading…</p>
+      <p class="muted">Chargement…</p>
     } @else if (giftee(); as g) {
       <section class="card card-night reveal">
         <div class="snow" aria-hidden="true"></div>
         <app-corners />
         <app-holly [size]="72" />
-        <span class="eyebrow">You are the Secret Santa of</span>
+        <span class="eyebrow">Vous êtes le Père Noël secret de</span>
         <h2 class="script name">{{ g.participant.displayName }}</h2>
         <app-divider />
-        <p class="muted">Shhh… keep it secret. Ask questions with anonymous messages.</p>
-        <a routerLink="../messages" class="btn btn-gold btn-sm">✉ Send an anonymous message</a>
+        <p class="muted">Chut… c’est un secret. Posez vos questions par message anonyme.</p>
+        <a routerLink="../messages" class="btn btn-gold btn-sm">✉ Envoyer un message anonyme</a>
       </section>
 
       <div class="grid pair">
         <section class="card">
-          <h2>What they told us</h2>
+          <h2>Ses réponses</h2>
           @if (g.questionnaire; as q) {
             @if (q.interests.length) {
-              <h3>Interests</h3>
+              <h3>Centres d’intérêt</h3>
               <div class="chips">
                 @for (id of q.interests; track id) {
                   <span class="badge badge-green">{{ label(id) }}</span>
@@ -53,7 +53,7 @@ import { EventStore } from './event-store';
               </div>
             }
             @if (q.giftStyles.length) {
-              <h3>Favourite kinds of gifts</h3>
+              <h3>Cadeaux préférés</h3>
               <div class="chips">
                 @for (id of q.giftStyles; track id) {
                   <span class="badge">{{ label(id) }}</span>
@@ -61,7 +61,7 @@ import { EventStore } from './event-store';
               </div>
             }
             @if (q.avoid.length) {
-              <h3>Please avoid</h3>
+              <h3>À éviter</h3>
               <div class="chips">
                 @for (id of q.avoid; track id) {
                   <span class="badge badge-red">{{ label(id) }}</span>
@@ -69,29 +69,27 @@ import { EventStore } from './event-store';
               </div>
             }
             @if (q.sizes) {
-              <h3>Sizes</h3>
+              <h3>Tailles</h3>
               <p>{{ q.sizes }}</p>
             }
             @if (q.notes) {
-              <h3>Notes</h3>
+              <h3>Précisions</h3>
               <p class="pre">{{ q.notes }}</p>
             }
           } @else {
-            <p class="muted">
-              {{ g.participant.displayName }} has not answered the questionnaire yet.
-            </p>
+            <p class="muted">{{ g.participant.displayName }} n’a pas encore rempli ses envies.</p>
           }
         </section>
 
         <section class="card">
-          <h2>Wishlist</h2>
+          <h2>Liste de souhaits</h2>
           @if (g.wishlist.length) {
             <ul class="list">
               @for (item of g.wishlist; track item.id) {
                 <li>
                   <strong>{{ item.title }}</strong>
                   @if (item.priority === 1) {
-                    <span class="badge badge-red">Would love it</span>
+                    <span class="badge badge-red">Adorerait</span>
                   }
                   @if (item.price !== null) {
                     <span class="muted small"> · ~{{ money(item.price) }}</span>
@@ -101,22 +99,25 @@ import { EventStore } from './event-store';
                   }
                   @if (item.url) {
                     <div class="small">
-                      <a [href]="item.url" target="_blank" rel="noopener noreferrer">View link ↗</a>
+                      <a [href]="item.url" target="_blank" rel="noopener noreferrer"
+                        >Voir le lien ↗</a
+                      >
                     </div>
                   }
                 </li>
               }
             </ul>
           } @else {
-            <p class="muted">No wishes yet.</p>
+            <p class="muted">Pas encore de souhaits.</p>
           }
         </section>
       </div>
 
       <section class="card">
-        <h2>Gift ideas</h2>
+        <h2>Idées cadeaux</h2>
         <p class="muted small">
-          Suggested from {{ g.participant.displayName }}’s answers, wishlist and the event budget.
+          D’après les réponses et la liste de {{ g.participant.displayName }}, et le budget du
+          Secret Santa.
         </p>
         @if (suggestions().length) {
           <div class="grid">
@@ -135,13 +136,13 @@ import { EventStore } from './event-store';
           </div>
         } @else {
           <p class="muted">
-            No matching ideas within the budget. Check the wishlist or send a message!
+            Aucune idée ne correspond au budget. Regardez sa liste ou envoyez-lui un message !
           </p>
         }
       </section>
     } @else {
       <div class="card empty">
-        <p>You have no giftee in this event yet.</p>
+        <p>Vous n’avez pas encore de tirage pour ce Secret Santa.</p>
       </div>
     }
   `,

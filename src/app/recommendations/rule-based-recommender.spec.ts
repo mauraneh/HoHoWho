@@ -34,7 +34,7 @@ describe('recommendGifts', () => {
     const result = recommendGifts(request({}, { interests: ['coffee'] }));
     expect(result.length).toBeGreaterThan(0);
     expect(GIFT_CATALOG.find((g) => g.id === result[0].id)!.interests).toContain('coffee');
-    expect(result[0].reasons[0]).toContain('coffee');
+    expect(result[0].reasons[0]).toContain('Café');
   });
 
   it('never suggests ideas conflicting with what to avoid', () => {
@@ -72,14 +72,14 @@ describe('recommendGifts', () => {
       request({ wishlist: [wish('A new mystery novel')] }, { notes: 'My dog is my best friend' }),
     );
     const reasons = result.flatMap((r) => r.reasons).join(' ');
-    expect(reasons).toContain('reading');
-    expect(reasons).toContain('pets');
+    expect(reasons).toContain('Lecture');
+    expect(reasons).toContain('Animaux');
   });
 
   it('falls back to versatile ideas within budget when there are no answers', () => {
     const result = recommendGifts({ ...request({ budgetMax: 15 }), questionnaire: null });
     expect(result).toHaveLength(6);
-    expect(result.every((r) => r.reasons.some((x) => x.includes('Versatile')))).toBe(true);
+    expect(result.every((r) => r.reasons.some((x) => x.includes('Valeur sûre')))).toBe(true);
   });
 
   it('is deterministic', () => {
@@ -103,6 +103,14 @@ describe('recommendGifts', () => {
 });
 
 describe('inferInterests', () => {
+  it('understands French notes, accents included', () => {
+    expect(inferInterests(['J’adore les romans, la pâtisserie et mon chat'], [])).toEqual([
+      'reading',
+      'baking',
+      'pets',
+    ]);
+  });
+
   it('ignores interests already declared', () => {
     expect(inferInterests(['I love coffee and books'], ['coffee'])).toEqual(['reading']);
   });

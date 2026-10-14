@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth.guards';
+import { authGuard, guestGuard, organizerGuard } from './core/auth.guards';
 import { HohowhoBackend } from './core/backend/hohowho-backend';
 import { takeNext } from './core/pending-navigation';
 
@@ -14,12 +14,12 @@ export const routes: Routes = [
   {
     path: 'sign-in',
     canActivate: [guestGuard],
-    title: 'Sign in · HoHoWho',
+    title: 'Connexion · HoHoWho',
     loadComponent: () => import('./features/auth/sign-in-page').then((m) => m.SignInPage),
   },
   {
     path: 'join/:token',
-    title: 'Join an event · HoHoWho',
+    title: 'Invitation · HoHoWho',
     loadComponent: () => import('./features/join/join-page').then((m) => m.JoinPage),
   },
   {
@@ -28,13 +28,14 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        title: 'My events · HoHoWho',
+        title: 'Mes Secret Santa · HoHoWho',
         loadComponent: () =>
           import('./features/events/event-list-page').then((m) => m.EventListPage),
       },
       {
         path: 'new',
-        title: 'New event · HoHoWho',
+        canActivate: [organizerGuard],
+        title: 'Nouveau Secret Santa · HoHoWho',
         loadComponent: () =>
           import('./features/events/event-create-page').then((m) => m.EventCreatePage),
       },
@@ -47,7 +48,7 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    title: 'Not found · HoHoWho',
+    title: 'Page introuvable · HoHoWho',
     loadComponent: () => import('./features/not-found-page').then((m) => m.NotFoundPage),
   },
 ];

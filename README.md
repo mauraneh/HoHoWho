@@ -10,6 +10,7 @@ It costs **€0 per month** to run: a static Angular app on **GitHub Pages**, wi
 
 | Feature                    | How it works                                                                                                                                                                                                                                                                                                                                        |
 | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Language                   | The interface is in French (dates, prices and messages included).                                                                                                                                                                                                                                                                                   |
 | Accounts without passwords | Name + e-mail only: Supabase Auth e-mails a one-click magic link that works on any device. The account is created on first use.                                                                                                                                                                                                                     |
 | Events                     | Name, description, date, budget range and currency. The organiser can delete the event.                                                                                                                                                                                                                                                             |
 | Secure invitations         | Each link carries a random 256-bit token. Only its SHA-256 hash is stored. Links expire after 14 days, can be revoked, and stop working once the list is closed. Anyone with the link can see the event name before entering their e-mail.                                                                                                          |
@@ -134,15 +135,16 @@ npx serve dist/hohowho/browser    # any static file server works
 
 ### Configuration
 
-| Where                             | What                                                                                                                          |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `src/environments/*.ts`           | Build-time switch: `dataSource: 'mock' \| 'supabase'`. No secrets.                                                            |
-| `config.json` (runtime)           | `{ "supabaseUrl", "supabaseAnonKey" }`. Generated, git-ignored, never committed.                                              |
-| `.env` (local only)               | Source for `config.json` locally. Template: `.env.example`.                                                                   |
-| GitHub repository **variables**   | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `BASE_HREF`.                                                                    |
-| GitHub environment `SUPABASE_URL` | Same variables and secrets can live in this environment (Settings → Environments); the CI jobs read it.                       |
-| GitHub repository **secrets**     | Optional, for automatic Supabase deploys: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.            |
-| Edge Function secret (optional)   | `ALLOWED_ORIGINS`: comma-separated CORS origins. Defaults to `*`, which is safe because auth uses bearer tokens, not cookies. |
+| Where                             | What                                                                                                                                                                                                  |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/environments/*.ts`           | Build-time switch: `dataSource: 'mock' \| 'supabase'`. No secrets.                                                                                                                                    |
+| `config.json` (runtime)           | `{ "supabaseUrl", "supabaseAnonKey" }`. Generated, git-ignored, never committed.                                                                                                                      |
+| `.env` (local only)               | Source for `config.json` locally. Template: `.env.example`.                                                                                                                                           |
+| GitHub repository **variables**   | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `BASE_HREF`.                                                                                                                                            |
+| GitHub environment `SUPABASE_URL` | Same variables and secrets can live in this environment (Settings → Environments); the CI jobs read it.                                                                                               |
+| GitHub repository **secrets**     | Optional, for automatic Supabase deploys: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.                                                                                    |
+| `ORGANIZER_EMAILS` variable       | Comma-separated e-mails allowed to create a Secret Santa (organisers). Synced to `public.organizers` on each deploy by `scripts/sync-organizers.mjs`; never committed. If empty, anyone can organise. |
+| Edge Function secret (optional)   | `ALLOWED_ORIGINS`: comma-separated CORS origins. Defaults to `*`, which is safe because auth uses bearer tokens, not cookies.                                                                         |
 
 ---
 
@@ -188,6 +190,8 @@ Under **Settings → Secrets and variables → Actions**:
 3. **edge-functions:** `deno check` on the draw function.
 4. **deploy-pages:** publishes to `https://<owner>.github.io/<repo>/`.
 5. **deploy-supabase:** `supabase db push` and `functions deploy`, only when the Supabase secrets are set.
+
+When `ORGANIZER_EMAILS` is set (repository or environment variable), the Supabase job also syncs the organiser list: only those addresses see "Nouveau Secret Santa" and can create events; everyone else joins through invitation links.
 
 Pull requests run steps 1–3 without deploying.
 

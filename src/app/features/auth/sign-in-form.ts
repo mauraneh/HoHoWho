@@ -14,14 +14,14 @@ import { DATA_SOURCE } from '../../core/tokens';
     @if (sentTo(); as email) {
       <div class="sent" role="status">
         <div class="envelope" aria-hidden="true">✉️</div>
-        <h2>Check your inbox</h2>
+        <h2>Regardez votre boîte mail</h2>
         <p>
-          We sent a magic link to <strong>{{ email }}</strong
-          >. Open it on any device to continue — no password needed.
+          Nous avons envoyé un lien magique à <strong>{{ email }}</strong
+          >. Ouvrez-le sur n’importe quel appareil pour continuer, sans mot de passe.
         </p>
-        <p class="muted small">Nothing after a few minutes? Check your spam folder, or</p>
+        <p class="muted small">Rien après quelques minutes ? Regardez dans les spams, ou</p>
         <button type="button" class="link-btn" (click)="sentTo.set(null)">
-          use another address
+          utilisez une autre adresse
         </button>
       </div>
     } @else {
@@ -30,18 +30,20 @@ import { DATA_SOURCE } from '../../core/tokens';
           <div class="alert alert-error" role="alert">{{ e }}</div>
         }
         <div class="field">
-          <label for="displayName">Your first name</label>
+          <label for="displayName">Votre prénom</label>
           <input
             id="displayName"
             formControlName="displayName"
             autocomplete="given-name"
             maxlength="60"
-            placeholder="e.g. Camille"
+            placeholder="ex. Camille"
           />
-          <span class="hint">Shown to the other participants (only needed the first time).</span>
+          <span class="hint"
+            >Visible par les autres participants (demandé seulement la première fois).</span
+          >
         </div>
         <div class="field">
-          <label for="email">Your e-mail</label>
+          <label for="email">Votre e-mail</label>
           <input
             id="email"
             type="email"
@@ -51,13 +53,13 @@ import { DATA_SOURCE } from '../../core/tokens';
           />
         </div>
         <button type="submit" class="btn btn-primary btn-lg btn-block" [disabled]="busy()">
-          {{ busy() ? 'Sending…' : submitLabel() }}
+          {{ busy() ? 'Envoi…' : submitLabel() }}
         </button>
         <p class="muted small fine-print">
           {{
             isMock
-              ? 'Demo mode: you are signed in instantly, no e-mail is sent.'
-              : 'We e-mail you a one-click link. No password, no account to manage.'
+              ? 'Mode démo : connexion immédiate, aucun e-mail n’est envoyé.'
+              : 'Vous recevez un lien de connexion par e-mail. Pas de mot de passe, pas de compte à gérer.'
           }}
         </p>
       </form>
@@ -88,7 +90,7 @@ export class SignInForm {
 
   /** In-app path to open once signed in. */
   readonly next = input('/events');
-  readonly submitLabel = input('Send me my magic link ✨');
+  readonly submitLabel = input('Recevoir mon lien magique ✨');
   /** Emitted when the user is signed in right away (demo mode). */
   readonly signedIn = output<void>();
 
@@ -109,7 +111,7 @@ export class SignInForm {
     this.error.set(null);
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.error.set('Please enter a valid e-mail address.');
+      this.error.set('Merci d’indiquer une adresse e-mail valide.');
       return;
     }
     const { displayName, email } = this.form.getRawValue();

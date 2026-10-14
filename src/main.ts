@@ -13,6 +13,6 @@ createBackend(environment)
     console.error(error);
     const message = document.createElement('div');
     message.className = 'fatal-error';
-    message.textContent = `HoHoWho could not start: ${(error as Error).message ?? error}`;
+    message.textContent = `HoHoWho n’a pas pu démarrer : ${(error as Error).message ?? error}`;
     document.body.replaceChildren(message);
   });
