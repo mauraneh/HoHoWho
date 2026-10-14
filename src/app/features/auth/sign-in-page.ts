@@ -12,20 +12,21 @@ import { AccessPanel } from './access-panel';
     <section class="container hero">
       <h1 class="display">Secret<br />Santa<span class="dot">.</span></h1>
       <p class="lead">
-        Un lien à partager. Chacun donne ses envies, puis les noms sont tirés au sort. Gratuit, sans
-        pub, sans mot de passe.
+        Un lien, des prénoms, et le hasard fait le reste. Chacun dit ce qui lui ferait plaisir, les
+        lutins tirent au sort, et personne ne sait qui gâte qui. Gratuit, sans pub, sans mot de
+        passe.
       </p>
     </section>
 
     <section class="container access">
       <div class="card signin-card">
-        <h2>Entrer</h2>
+        <h2>C’est par ici 👇</h2>
         <app-access-panel (signedIn)="continue()" />
       </div>
     </section>
 
     <section class="container">
-      <h2 class="section-title">Comment ça marche</h2>
+      <h2 class="section-title">Comment ça marche ?</h2>
       <ol class="steps">
         @for (step of steps; track step.n) {
           <li>
@@ -108,18 +109,18 @@ export class SignInPage {
   protected readonly steps = [
     {
       n: '01',
-      title: 'Inscription & envies',
-      text: 'Chacun ouvre votre lien, entre son prénom et dit ce qui lui ferait plaisir.',
+      title: 'Tout le monde dans le traîneau',
+      text: 'Chacun ouvre le lien, tape son prénom et dit ce qui lui ferait vraiment plaisir (et ce qui finirait direct au fond d’un placard).',
     },
     {
       n: '02',
-      title: 'Exclusions',
-      text: 'Une fois la liste fermée, chacun choisit en secret à qui il préfère ne pas offrir.',
+      title: 'Les petits arrangements',
+      text: 'Liste fermée ? Chacun peut écarter quelqu’un en toute discrétion. On ne juge pas, et personne ne saura.',
     },
     {
       n: '03',
-      title: 'Le tirage',
-      text: 'Quand tout le monde a validé, les noms sont tirés et chacun découvre à qui il offre.',
+      title: 'Le grand tirage',
+      text: 'Dès que tout le monde a validé, les lutins tirent au sort. Tu découvres à qui tu offres… et tu gardes le secret.',
     },
   ];
 

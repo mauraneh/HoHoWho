@@ -50,12 +50,12 @@ import { personalLinkUrl } from '../core/personal-link';
 })
 export class PersonalLinkCard {
   readonly key = input.required<string>();
-  readonly title = input('Votre lien personnel');
+  readonly title = input('Ton lien perso');
   readonly hint = input(
-    'Gardez-le précieusement : il vous reconnecte sur n’importe quel appareil. Ne le donnez à personne.',
+    'C’est ta clé : il te reconnecte sur n’importe quel appareil. Garde-le bien et ne le prête à personne (même pas au Père Noël).',
   );
   /** Message used when sharing (WhatsApp / share sheet). */
-  readonly message = input('Mon lien HoHoWho :');
+  readonly message = input('Ma clé HoHoWho 🔑 (à ne pas perdre) :');
 
   protected readonly id = `link-${Math.random().toString(36).slice(2, 8)}`;
   protected readonly copied = signal(false);

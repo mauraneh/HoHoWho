@@ -52,7 +52,7 @@ function budgetRange(group: AbstractControl): ValidationErrors | null {
               placeholder="Noël en famille 2026"
             />
             @if (form.controls.name.touched && form.controls.name.invalid) {
-              <span class="error">Donnez un nom à votre Secret Santa (80 caractères max.).</span>
+              <span class="error">Il lui faut un petit nom (80 caractères max.).</span>
             }
           </div>
           <div class="field">
@@ -61,22 +61,22 @@ function budgetRange(group: AbstractControl): ValidationErrors | null {
               id="description"
               formControlName="description"
               maxlength="1000"
-              placeholder="Où et quand vous échangerez les cadeaux, thème, dress code…"
+              placeholder="Où, quand, pull moche obligatoire…"
             ></textarea>
           </div>
           <div class="field">
             <label for="eventDate"
-              >Date de l’échange des cadeaux <span class="muted">(facultatif)</span></label
+              >Date de la grande distribution <span class="muted">(facultatif)</span></label
             >
             <input id="eventDate" type="date" formControlName="eventDate" />
           </div>
           <div class="field-row">
             <div class="field">
-              <label for="budgetMin">Budget minimum</label>
+              <label for="budgetMin">Budget mini</label>
               <input id="budgetMin" type="number" min="0" step="1" formControlName="budgetMin" />
             </div>
             <div class="field">
-              <label for="budgetMax">Budget maximum</label>
+              <label for="budgetMax">Budget maxi</label>
               <input id="budgetMax" type="number" min="0" step="1" formControlName="budgetMax" />
             </div>
             <div class="field">
@@ -89,10 +89,10 @@ function budgetRange(group: AbstractControl): ValidationErrors | null {
             </div>
           </div>
           @if (form.hasError('budgetRange')) {
-            <p class="error small">Le budget minimum ne peut pas dépasser le maximum.</p>
+            <p class="error small">Le budget mini ne peut pas dépasser le maxi (bien essayé).</p>
           }
           <button type="submit" class="btn btn-primary" [disabled]="busy()">
-            {{ busy() ? 'Création…' : 'Créer le Secret Santa' }}
+            {{ busy() ? 'Les lutins s’activent…' : 'Lancer le Secret Santa 🎄' }}
           </button>
         </form>
       </div>

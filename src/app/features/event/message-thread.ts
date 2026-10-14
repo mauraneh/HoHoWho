@@ -40,11 +40,11 @@ const REFRESH_MS = 20_000;
           <li [class.mine]="isMine(m)">
             <div class="bubble">{{ m.body }}</div>
             <div class="meta">
-              {{ isMine(m) ? 'Vous' : otherName() }} · {{ m.createdAt | date: 'short' }}
+              {{ isMine(m) ? 'Toi' : otherName() }} · {{ m.createdAt | date: 'short' }}
             </div>
           </li>
         } @empty {
-          <li class="muted small empty-thread">Pas encore de message.</li>
+          <li class="muted small empty-thread">Pas encore de message. Lance-toi !</li>
         }
       </ol>
 
@@ -56,7 +56,7 @@ const REFRESH_MS = 20_000;
           [(ngModel)]="draft"
           maxlength="2000"
           rows="2"
-          placeholder="Écrire un message…"
+          placeholder="Écris un message…"
         ></textarea>
         <button type="submit" class="btn btn-primary" [disabled]="sending() || !draft.trim()">
           Envoyer

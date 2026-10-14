@@ -29,7 +29,7 @@ import { EventStore } from './event-store';
           <h1>{{ d.event.name }}</h1>
           <div class="meta">
             <span>{{
-              d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date à définir'
+              d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date encore secrète'
             }}</span>
             <span>{{ budget() }}</span>
             <span

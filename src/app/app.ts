@@ -43,10 +43,10 @@ import { Snowfall } from './shared/snowfall';
     </main>
 
     <footer class="footer muted small">
-      <p>Le Secret Santa entre proches · gratuit et sans pub</p>
+      <p>Fait avec amour et beaucoup de neige · gratuit et sans pub</p>
       @if (isMock) {
         <p>
-          Mode démo : les données restent dans ce navigateur.
+          Mode démo : tout reste dans ton navigateur.
           <button type="button" class="link-btn" (click)="resetDemo()">
             Réinitialiser la démo
           </button>
@@ -145,7 +145,7 @@ export class App {
   async signOut(): Promise<void> {
     if (
       !confirm(
-        'Se déconnecter ? Pour revenir, il vous faudra votre lien personnel (menu « Mon lien »).',
+        'Tu t’en vas ? Pour revenir, il te faudra ton lien perso (menu « Mon lien »). Tu l’as bien gardé ?',
       )
     ) {
       return;

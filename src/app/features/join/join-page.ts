@@ -28,14 +28,14 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
     <div class="container narrow">
       @if (error(); as e) {
         <div class="card">
-          <h1>Invitation indisponible</h1>
+          <h1>Oups, ce lien a fondu</h1>
           <p class="muted">{{ e }}</p>
-          <p class="muted small">Demandez un nouveau lien à l’organisateur.</p>
+          <p class="muted small">Demande un nouveau lien à l’orga.</p>
           <a routerLink="/events" class="btn">Mes Secret Santa</a>
         </div>
       } @else if (preview(); as p) {
         <header class="invite">
-          <span class="eyebrow">{{ p.ownerName }} vous invite</span>
+          <span class="eyebrow">{{ p.ownerName }} t’invite 🎄</span>
           <h1>{{ p.eventName }}</h1>
           @if (p.eventDate) {
             <p class="muted date">{{ p.eventDate | date: 'fullDate' }}</p>
@@ -46,22 +46,22 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
           @if (welcomeKey(); as key) {
             <h2>Bienvenue {{ user()?.displayName }} ! 🎉</h2>
             <p class="muted">
-              Vous participez au Secret Santa. Voici votre lien personnel : envoyez-le-vous (sur
-              WhatsApp par exemple) pour revenir plus tard, sur ce téléphone ou un autre.
+              Tu es dans la hotte ! Voici ton lien perso : envoie-le-toi (sur WhatsApp par exemple)
+              pour revenir plus tard, sur ce téléphone ou un autre.
             </p>
             <app-personal-link-card [key]="key" />
             <button type="button" class="btn btn-primary btn-lg btn-block" (click)="continue(p)">
               Remplir mes envies
             </button>
           } @else if (!user()) {
-            <h2>Rejoindre en 1 minute</h2>
+            <h2>Monte dans le traîneau</h2>
             <p class="muted small">
-              Juste votre prénom : pas d’e-mail, pas de mot de passe. Vous direz ensuite à votre
-              Père Noël secret ce qui vous ferait plaisir.
+              Juste ton prénom : pas d’e-mail, pas de mot de passe. Ensuite, tu diras à ton Père
+              Noël secret ce qui te ferait plaisir.
             </p>
             <form (ngSubmit)="joinAsNewcomer()">
               <div class="field">
-                <label for="displayName">Votre prénom</label>
+                <label for="displayName">Ton prénom</label>
                 <input
                   id="displayName"
                   name="displayName"
@@ -70,7 +70,7 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
                   autocomplete="given-name"
                   placeholder="ex. Camille"
                 />
-                <span class="hint">Visible par les autres participants.</span>
+                <span class="hint">Les autres le verront, pas de pseudo louche.</span>
               </div>
               <button
                 type="submit"
@@ -81,19 +81,18 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
               </button>
             </form>
             <p class="muted small already">
-              Vous avez déjà votre lien personnel&nbsp;? Ouvrez-le d’abord, puis revenez sur cette
-              invitation.
+              Tu as déjà ton lien perso&nbsp;? Ouvre-le d’abord, puis reviens sur cette invitation.
             </p>
           } @else if (p.alreadyMember) {
-            <h2>Vous en êtes ! 🎉</h2>
-            <p class="muted">Vous participez déjà.</p>
+            <h2>Tu en es déjà ! 🎉</h2>
+            <p class="muted">Tu fais déjà partie de la bande.</p>
             <a [routerLink]="['/events', p.eventId]" class="btn btn-primary"
               >Ouvrir le Secret Santa</a
             >
           } @else {
             <h2>Bonjour {{ user()!.displayName }} 👋</h2>
             <p class="muted">
-              Rejoignez, puis dites à votre Père Noël secret quel cadeau vous ferait plaisir.
+              Rejoins la bande, puis dis à ton Père Noël secret ce qui te ferait plaisir.
             </p>
             <button
               type="button"
@@ -109,7 +108,7 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
           }
         </div>
       } @else {
-        <p class="muted center">Ouverture de votre invitation…</p>
+        <p class="muted center">On déballe ton invitation…</p>
       }
     </div>
   `,

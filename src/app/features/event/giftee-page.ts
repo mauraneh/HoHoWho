@@ -29,9 +29,9 @@ import { EventStore } from './event-store';
       <p class="muted">Chargement…</p>
     } @else if (giftee(); as g) {
       <section class="reveal" [class.opened]="revealed()">
-        <span class="eyebrow">Vous offrez un cadeau à</span>
+        <span class="eyebrow">Tu offres un cadeau à</span>
         <h2 class="name">{{ g.participant.displayName }}</h2>
-        <p class="muted">Chut… c’est un secret. Posez vos questions par message anonyme.</p>
+        <p class="muted">Chut… c’est top secret. Une question ? Envoie-lui un message anonyme.</p>
         <div class="row">
           <a routerLink="../messages" class="btn btn-primary">Envoyer un message anonyme</a>
           <button type="button" class="link-btn" (click)="replay()">↺ Revoir</button>
@@ -75,19 +75,22 @@ import { EventStore } from './event-store';
               <p class="pre">{{ q.notes }}</p>
             }
           } @else {
-            <p class="muted">{{ g.participant.displayName }} n’a pas encore rempli ses envies.</p>
+            <p class="muted">
+              {{ g.participant.displayName }} n’a pas encore rempli ses envies. Un petit message
+              pour le relancer ?
+            </p>
           }
         </section>
 
         <section class="card">
-          <h2>Liste de souhaits</h2>
+          <h2>Sa lettre au Père Noël</h2>
           @if (g.wishlist.length) {
             <ul class="list">
               @for (item of g.wishlist; track item.id) {
                 <li>
                   <strong>{{ item.title }}</strong>
                   @if (item.priority === 1) {
-                    <span class="badge badge-red">Adorerait</span>
+                    <span class="badge badge-red">En rêve</span>
                   }
                   @if (item.price !== null) {
                     <span class="muted small"> · ~{{ money(item.price) }}</span>
@@ -106,15 +109,15 @@ import { EventStore } from './event-store';
               }
             </ul>
           } @else {
-            <p class="muted">Pas encore de souhaits.</p>
+            <p class="muted">Sa lettre est encore vide.</p>
           }
         </section>
       </div>
 
       <section class="card">
-        <h2>Idées cadeaux</h2>
+        <h2>Idées pour viser juste</h2>
         <p class="muted small">
-          D’après les réponses et la liste de {{ g.participant.displayName }}, et le budget du
+          Selon les réponses et la lettre de {{ g.participant.displayName }}, dans le budget du
           Secret Santa.
         </p>
         @if (suggestions().length) {
@@ -134,13 +137,14 @@ import { EventStore } from './event-store';
           </div>
         } @else {
           <p class="muted">
-            Aucune idée ne correspond au budget. Regardez sa liste ou envoyez-lui un message !
+            Aucune idée ne rentre dans le budget. Jette un œil à sa lettre ou envoie-lui un message
+            !
           </p>
         }
       </section>
     } @else {
       <div class="card empty">
-        <p>Vous n’avez pas encore de tirage pour ce Secret Santa.</p>
+        <p>Pas encore de tirage pour ce Secret Santa. Patience !</p>
       </div>
     }
   `,

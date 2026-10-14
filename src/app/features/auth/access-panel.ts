@@ -20,29 +20,29 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
     }
 
     @if (organizerKey(); as key) {
-      <h3>Bienvenue, organisatrice ✦</h3>
+      <h3>Bienvenue dans l’atelier, cheffe des lutins 🎅</h3>
       <app-personal-link-card
         [key]="key"
-        title="Votre lien organisatrice"
-        hint="Il vous reconnecte à votre espace sur n’importe quel appareil. Gardez-le pour vous : il donne accès à l’organisation."
+        title="Ton lien organisatrice"
+        hint="Il t’ouvre l’atelier depuis n’importe quel appareil. Garde-le pour toi : c’est la clé du traîneau."
       />
       <button type="button" class="btn btn-primary btn-block" (click)="signedIn.emit()">
-        Continuer ✦
+        C’est parti ✦
       </button>
     } @else {
       <p class="lead-in">
-        <strong>Invité·e&nbsp;?</strong> Ouvrez simplement le lien d’invitation reçu : un prénom et
-        c’est parti, sans e-mail ni mot de passe.
+        <strong>Invité·e&nbsp;?</strong> Ouvre juste le lien qu’on t’a envoyé : un prénom et hop, tu
+        es dans la hotte. Pas d’e-mail, pas de mot de passe.
       </p>
 
       <form class="block" (ngSubmit)="openLink()">
-        <label class="field-label" for="personal-link">J’ai déjà mon lien personnel</label>
+        <label class="field-label" for="personal-link">J’ai déjà mon lien perso</label>
         <div class="inline">
           <input
             id="personal-link"
             name="link"
             [(ngModel)]="link"
-            placeholder="Collez votre lien ici"
+            placeholder="Colle ton lien ici"
             autocomplete="off"
           />
           <button type="submit" class="btn btn-primary" [disabled]="busy() || !link.trim()">
@@ -55,7 +55,7 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
         <summary>Espace organisatrice</summary>
         <form (ngSubmit)="organize()">
           <div class="field">
-            <label for="org-name">Votre prénom</label>
+            <label for="org-name">Ton prénom</label>
             <input
               id="org-name"
               name="name"
@@ -82,7 +82,7 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
             class="btn btn-green btn-block"
             [disabled]="busy() || !name.trim() || !code.trim()"
           >
-            Créer mon accès organisatrice
+            Ouvrir mon atelier 🎅
           </button>
         </form>
       </details>

@@ -48,21 +48,21 @@ type Step = 'done' | 'current' | 'todo';
         @switch (d.event.status) {
           @case ('open') {
             @if (!d.me.profileCompleted) {
-              <h2>🎁 Dites à votre Père Noël secret ce qui vous ferait plaisir</h2>
+              <h2>🎁 Qu’est-ce qui te ferait plaisir ?</h2>
               <p class="muted">
-                Quelques clics : vos centres d’intérêt, le genre de cadeaux que vous aimez, ce qu’il
-                faut éviter et, si vous voulez, une liste de souhaits.
+                Deux minutes chrono : tes passions, le genre de cadeaux qui te font sourire et ce
+                qu’il faut éviter à tout prix. Ton Père Noël secret te dira merci.
               </p>
               <button type="button" class="btn btn-primary" (click)="go('wishes')">
                 Remplir mes envies
               </button>
             } @else {
-              <h2>✓ Vos envies sont enregistrées</h2>
+              <h2>✓ Tes envies sont dans la hotte</h2>
               <p class="muted">
                 {{
                   d.isOwner
-                    ? 'Fermez la liste ci-dessous quand tout le monde a rejoint.'
-                    : 'Prochaine étape quand l’organisateur fermera la liste : le choix des exclusions.'
+                    ? 'Ferme la liste plus bas quand toute la tribu est là.'
+                    : 'Prochaine étape quand l’orga fermera la liste : tu pourras écarter quelqu’un en secret.'
                 }}
               </p>
               <button type="button" class="btn btn-sm" (click)="go('wishes')">
@@ -72,19 +72,21 @@ type Step = 'done' | 'current' | 'todo';
           }
           @case ('exclusions') {
             @if (!d.me.exclusionsConfirmed) {
-              <h2>🤫 Quelqu’un à qui vous préférez ne pas offrir ?</h2>
+              <h2>🤫 Quelqu’un que tu préfères éviter ?</h2>
               <p class="muted">
-                Choisissez en secret (ou personne), puis validez. Personne ne verra vos choix.
+                Coche en secret (ou personne, t’es une crème), puis valide. Personne ne verra tes
+                choix.
               </p>
               <button type="button" class="btn btn-primary" (click)="go('exclusions')">
-                Choisir mes exclusions
+                Choisir en secret
               </button>
             } @else {
-              <h2>✓ Vous avez validé vos exclusions</h2>
+              <h2>✓ C’est validé</h2>
               <p class="muted">
-                Le tirage se fait automatiquement quand tout le monde a validé ({{
-                  confirmedCount()
-                }}/{{ d.participants.length }} pour l’instant).
+                Le tirage part tout seul dès que tout le monde a validé ({{ confirmedCount() }}/{{
+                  d.participants.length
+                }}
+                pour l’instant). Patience…
               </p>
               <button type="button" class="btn btn-sm" (click)="go('exclusions')">
                 Modifier mes choix
@@ -94,7 +96,8 @@ type Step = 'done' | 'current' | 'todo';
           @case ('drawn') {
             <h2>🎉 Le tirage a eu lieu !</h2>
             <p class="muted">
-              Découvrez à qui vous offrez un cadeau, ses envies et des idées cadeaux.
+              Le moment de vérité : découvre à qui tu offres, ses envies et des idées pour viser
+              juste.
             </p>
             <button type="button" class="btn btn-primary btn-lg" (click)="go('giftee')">
               Découvrir mon tirage
@@ -122,7 +125,7 @@ type Step = 'done' | 'current' | 'todo';
                     <span class="badge badge-red">Organisatrice</span>
                   }
                   @if (p.id === d.me.id) {
-                    <span class="badge">Vous</span>
+                    <span class="badge">Toi</span>
                   }
                 </span>
               </span>
@@ -133,7 +136,7 @@ type Step = 'done' | 'current' | 'todo';
                   </span>
                 } @else if (d.event.status === 'exclusions') {
                   <span class="badge" [class.badge-green]="p.exclusionsConfirmed">
-                    {{ p.exclusionsConfirmed ? '✓ Validé' : '… En attente' }}
+                    {{ p.exclusionsConfirmed ? '✓ Validé' : '… Réfléchit' }}
                   </span>
                 }
                 @if (d.isOwner && p.id !== d.me.id) {
@@ -167,8 +170,8 @@ type Step = 'done' | 'current' | 'todo';
           <app-personal-link-card
             [key]="r.key"
             [title]="'Nouveau lien de ' + r.name"
-            hint="Envoyez-le-lui en privé : son ancien lien ne fonctionne plus."
-            message="Ton nouveau lien HoHoWho :"
+            hint="Envoie-le-lui en privé : son ancien lien ne marche plus."
+            message="Ta nouvelle clé HoHoWho 🔑 :"
           />
         }
         @if (d.event.status === 'open' && !d.isOwner) {
@@ -185,14 +188,14 @@ type Step = 'done' | 'current' | 'todo';
 
       @if (d.isOwner) {
         <section class="card organiser">
-          <span class="eyebrow">Espace organisateur</span>
+          <span class="eyebrow">L’atelier de l’orga</span>
           @switch (d.event.status) {
             @case ('open') {
-              <h2>1 · Invitez tout le monde</h2>
+              <h2>1 · Rameute la tribu</h2>
               <p class="muted small">
-                Partagez ce lien (WhatsApp, SMS…). Chacun entre son prénom puis remplit ses envies.
-                Par sécurité, un lien n’est affiché qu’une fois : créez-en un nouveau quand vous en
-                avez besoin.
+                Envoie ce lien (WhatsApp, SMS, pigeon voyageur…). Chacun tape son prénom et remplit
+                ses envies. Par sécurité, un lien ne s’affiche qu’une fois : crées-en un nouveau
+                quand il le faut.
               </p>
               @if (invitation(); as inv) {
                 <div class="share">
@@ -233,19 +236,19 @@ type Step = 'done' | 'current' | 'todo';
               </div>
 
               <hr />
-              <h2>2 · Fermez la liste</h2>
+              <h2>2 · Ferme la liste</h2>
               @if (d.participants.length < minParticipants) {
                 <p class="muted">
                   Il faut au moins {{ minParticipants }} participants ({{ d.participants.length }}
-                  pour l’instant).
+                  pour l’instant). Un Secret Santa à deux, c’est un peu louche.
                 </p>
               } @else {
                 <p class="muted">
-                  Quand tout le monde a rejoint, fermez la liste : plus personne ne peut s’inscrire,
-                  et chacun choisit à qui il préfère ne pas offrir.
+                  Toute la tribu est là ? Ferme la liste : plus personne ne peut entrer, et chacun
+                  peut écarter quelqu’un en secret.
                   @if (missingWishes() > 0) {
                     <strong
-                      >{{ missingWishes() }} participant(s) n’ont pas encore rempli leurs
+                      >{{ missingWishes() }} retardataire(s) n’ont pas encore rempli leurs
                       envies.</strong
                     >
                   }
@@ -261,9 +264,9 @@ type Step = 'done' | 'current' | 'todo';
               </button>
             }
             @case ('exclusions') {
-              <h2>Envoyez le lien des exclusions</h2>
+              <h2>Envoie le lien des petits arrangements</h2>
               <p class="muted small">
-                Chacun ouvre ce lien, choisit à qui il préfère ne pas offrir, puis valide.
+                Chacun l’ouvre, écarte (ou pas) quelqu’un en secret, puis valide.
               </p>
               <div class="share">
                 <label for="exclusions-link" class="visually-hidden">Lien des exclusions</label>
@@ -284,16 +287,16 @@ type Step = 'done' | 'current' | 'todo';
                   target="_blank"
                   rel="noopener"
                 >
-                  💬 Prévenir tout le monde sur WhatsApp
+                  💬 Prévenir la tribu sur WhatsApp
                 </a>
               </div>
               <hr />
-              <h2>Tirage au sort</h2>
+              <h2>Le grand tirage</h2>
               <p class="muted">
-                Le tirage se fait automatiquement dès que tout le monde a validé ({{
-                  confirmedCount()
-                }}/{{ d.participants.length }}). Vous pouvez aussi le lancer maintenant : ceux qui
-                n’ont pas validé n’auront simplement aucune exclusion.
+                Il part tout seul dès que tout le monde a validé ({{ confirmedCount() }}/{{
+                  d.participants.length
+                }}). Tu peux aussi le lancer maintenant : ceux qui traînent n’auront juste aucune
+                exclusion.
               </p>
               <div class="row">
                 <button type="button" class="btn btn-primary" [disabled]="busy()" (click)="draw()">
@@ -305,8 +308,10 @@ type Step = 'done' | 'current' | 'todo';
               </div>
             }
             @case ('drawn') {
-              <h2>Prévenez tout le monde</h2>
-              <p class="muted small">Chacun peut maintenant découvrir son tirage avec ce lien.</p>
+              <h2>Préviens tout le monde</h2>
+              <p class="muted small">
+                Chacun peut découvrir son tirage avec ce lien. Que la fête commence !
+              </p>
               <div class="share">
                 <label for="giftee-link" class="visually-hidden">Lien du Secret Santa</label>
                 <input
@@ -325,14 +330,14 @@ type Step = 'done' | 'current' | 'todo';
                 target="_blank"
                 rel="noopener"
               >
-                💬 Prévenir tout le monde sur WhatsApp
+                💬 Prévenir la tribu sur WhatsApp
               </a>
             }
           }
           <details class="danger-zone">
             <summary>Supprimer ce Secret Santa</summary>
             <p class="muted small">
-              Supprime définitivement le Secret Santa, les envies, le tirage et les messages.
+              Tout part à la poubelle : envies, tirage et messages. Pour de bon.
             </p>
             <button
               type="button"
@@ -340,7 +345,7 @@ type Step = 'done' | 'current' | 'todo';
               [disabled]="busy()"
               (click)="deleteEvent()"
             >
-              Supprimer définitivement
+              Supprimer pour de bon
             </button>
           </details>
         </section>
@@ -481,11 +486,15 @@ export class OverviewPage {
     return [
       {
         title: 'Inscriptions & envies',
-        detail: 'Chacun rejoint et partage ses envies',
+        detail: 'Chacun monte à bord et dit ce qui lui plaît',
         state: state(0),
       },
-      { title: 'Exclusions', detail: 'Chacun choisit à qui ne pas offrir', state: state(1) },
-      { title: 'Tirage', detail: 'Chacun découvre à qui il offre', state: state(2) },
+      {
+        title: 'Exclusions',
+        detail: 'Chacun écarte (ou pas) quelqu’un en secret',
+        state: state(1),
+      },
+      { title: 'Tirage', detail: 'Les lutins tirent au sort', state: state(2) },
     ];
   });
 
@@ -559,7 +568,7 @@ export class OverviewPage {
       this.copied.set(true);
       setTimeout(() => this.copied.set(false), 2000);
     } catch {
-      this.error.set('La copie a échoué : sélectionnez le lien et copiez-le à la main.');
+      this.error.set('La copie a coincé : sélectionne le lien et copie-le à la main.');
     }
   }
 
@@ -582,7 +591,7 @@ export class OverviewPage {
   async newLinkFor(participant: Participant): Promise<void> {
     if (
       !confirm(
-        `Créer un nouveau lien pour ${participant.displayName} ? Son ancien lien ne fonctionnera plus.`,
+        `Un nouveau lien pour ${participant.displayName} ? Son ancien lien arrêtera de marcher.`,
       )
     )
       return;
@@ -619,7 +628,7 @@ export class OverviewPage {
   async revokeInvitations(): Promise<void> {
     if (
       !confirm(
-        'Révoquer tous les liens d’invitation ? Ceux qui n’ont pas encore rejoint auront besoin d’un nouveau lien.',
+        'Révoquer tous les liens d’invitation ? Ceux qui ne sont pas encore entrés auront besoin d’un nouveau lien.',
       )
     )
       return;
@@ -627,29 +636,28 @@ export class OverviewPage {
       await this.backend.revokeInvitations(this.eventId);
       this.invitation.set(null);
       this.activeInvitations.set(0);
-    }, 'Tous les liens d’invitation ont été révoqués.');
+    }, 'Tous les liens d’invitation sont révoqués.');
   }
 
   async closeRegistrations(): Promise<void> {
     const missing = this.missingWishes();
     const warning =
       missing > 0
-        ? `\n\n${missing} participant(s) n’ont pas encore rempli leurs envies (ils pourront encore le faire après).`
+        ? `\n\n${missing} retardataire(s) n’ont pas encore rempli leurs envies (ils pourront encore le faire après).`
         : '';
-    if (!confirm(`Fermer la liste ? Plus personne ne pourra rejoindre.${warning}`)) return;
+    if (!confirm(`Fermer la liste ? Plus personne ne pourra entrer.${warning}`)) return;
     const ok = await this.run(
       () => this.backend.closeRegistrations(this.eventId),
-      'La liste est fermée. Envoyez le lien des exclusions à tout le monde ci-dessous.',
+      'La liste est fermée ! Envoie le lien des petits arrangements à tout le monde ci-dessous.',
     );
     if (ok) await this.store.reload();
   }
 
   async reopen(): Promise<void> {
-    if (!confirm('Rouvrir la liste ? Tout le monde devra valider à nouveau ses exclusions.'))
-      return;
+    if (!confirm('Rouvrir la liste ? Tout le monde devra revalider ses exclusions.')) return;
     const ok = await this.run(
       () => this.backend.reopenRegistrations(this.eventId),
-      'La liste est de nouveau ouverte.',
+      'La liste est rouverte, entrez !',
     );
     if (ok) await this.store.reload();
   }
@@ -658,13 +666,13 @@ export class OverviewPage {
     if (!confirm(`Retirer ${participant.displayName} de ce Secret Santa ?`)) return;
     const ok = await this.run(
       () => this.backend.removeParticipant(participant.id),
-      `${participant.displayName} a été retiré·e.`,
+      `${participant.displayName} est descendu·e du traîneau.`,
     );
     if (ok) await this.store.reload();
   }
 
   async leave(me: Participant): Promise<void> {
-    if (!confirm('Quitter ce Secret Santa ? Vos envies seront supprimées.')) return;
+    if (!confirm('Quitter ce Secret Santa ? Tes envies partiront avec toi.')) return;
     const ok = await this.run(() => this.backend.removeParticipant(me.id));
     if (ok) await this.router.navigateByUrl('/events');
   }
@@ -672,8 +680,9 @@ export class OverviewPage {
   async draw(): Promise<void> {
     const waiting = (this.store.detail()?.participants.length ?? 0) - this.confirmedCount();
     const warning =
-      waiting > 0 ? ` ${waiting} participant(s) n’ont pas validé leurs exclusions.` : '';
-    if (!confirm(`Lancer le tirage maintenant ?${warning} C’est irréversible.`)) return;
+      waiting > 0 ? ` ${waiting} retardataire(s) n’ont pas validé leurs exclusions.` : '';
+    if (!confirm(`Lancer le tirage maintenant ?${warning} Pas de retour en arrière possible.`))
+      return;
     const ok = await this.run(
       () => this.backend.drawNames(this.eventId),
       'Le tirage a eu lieu ! 🎉',
@@ -682,7 +691,12 @@ export class OverviewPage {
   }
 
   async deleteEvent(): Promise<void> {
-    if (!confirm('Supprimer ce Secret Santa et toutes ses données ? C’est irréversible.')) return;
+    if (
+      !confirm(
+        'Supprimer ce Secret Santa et tout ce qu’il contient ? Pas de retour en arrière possible.',
+      )
+    )
+      return;
     const ok = await this.run(() => this.backend.deleteEvent(this.eventId));
     if (ok) await this.router.navigateByUrl('/events');
   }

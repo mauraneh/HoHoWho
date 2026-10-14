@@ -6,9 +6,9 @@ import { errorMessage, formatBudget } from '../../core/format';
 import { EventStatus, EventSummary } from '../../core/models';
 
 const PHASES: Record<EventStatus, string> = {
-  open: 'Inscriptions & envies',
-  exclusions: 'Exclusions',
-  drawn: 'Tirage effectué',
+  open: 'Inscriptions ouvertes',
+  exclusions: 'Petits arrangements',
+  drawn: 'Tirage fait 🎁',
 };
 
 @Component({
@@ -36,7 +36,7 @@ const PHASES: Record<EventStatus, string> = {
                 @if (event.eventDate) {
                   {{ event.eventDate | date: 'd MMMM' }}
                 } @else {
-                  Date à définir
+                  Date encore secrète
                 }
               </span>
               <span class="name">{{ event.name }}</span>
@@ -55,10 +55,11 @@ const PHASES: Record<EventStatus, string> = {
         @if (list.length === 0) {
           <p class="muted empty-hint">
             @if (canOrganize()) {
-              Aucun Secret Santa pour l’instant : créez-en un et partagez le lien d’invitation.
+              Rien sous le sapin pour l’instant. Crée ton premier Secret Santa et envoie le lien à
+              ta tribu !
             } @else {
-              Vous ne participez encore à aucun Secret Santa. Ouvrez le lien d’invitation que
-              l’organisateur vous a envoyé.
+              Pas encore de Secret Santa par ici. Ouvre le lien d’invitation qu’on t’a envoyé pour
+              monter dans le traîneau.
             }
           </p>
         }

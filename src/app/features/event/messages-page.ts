@@ -28,11 +28,11 @@ import { MessageThread } from './message-thread';
             [eventId]="d.event.id"
             [receiverId]="g.id"
             role="santa"
-            [heading]="'À ' + g.displayName"
+            [heading]="'Écrire à ' + g.displayName"
             [hint]="
-              'Vous écrivez en tant que « Ton Père Noël secret » : ' +
+              'Tu signes « Ton Père Noël secret » : ' +
               g.displayName +
-              ' ne verra pas votre nom.'
+              ' ne saura pas que c’est toi. Mystère total.'
             "
             [otherName]="g.displayName"
           />
@@ -42,7 +42,7 @@ import { MessageThread } from './message-thread';
           [receiverId]="d.me.id"
           role="giftee"
           heading="De mon Père Noël secret"
-          hint="Votre Père Noël secret sait qui vous êtes, vous ne savez pas qui il est. Posez-lui vos questions !"
+          hint="Ton Père Noël secret sait qui tu es, toi non. Pose-lui toutes tes questions !"
           otherName="Ton Père Noël secret"
         />
       </div>

@@ -12,8 +12,8 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
   template: `
     <div class="container narrow">
       <div class="card">
-        <span class="eyebrow">Votre accès</span>
-        <h1>Mon lien personnel</h1>
+        <span class="eyebrow">Ta clé du traîneau</span>
+        <h1>Mon lien perso</h1>
         @if (error(); as e) {
           <div class="alert alert-error" role="alert">{{ e }}</div>
         }
@@ -21,12 +21,12 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
           <app-personal-link-card [key]="k" />
         } @else {
           <p class="muted">
-            Ce lien n’est pas enregistré sur cet appareil. Si vous l’avez perdu, générez-en un
-            nouveau : l’ancien ne fonctionnera plus.
+            Ton lien n’est pas enregistré sur cet appareil. Perdu ? Pas de panique : génère-en un
+            nouveau (l’ancien arrêtera de marcher).
           </p>
         }
         <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="reset()">
-          ↻ Générer un nouveau lien
+          ↻ Me faire un nouveau lien
         </button>
       </div>
     </div>
@@ -39,7 +39,8 @@ export class MyLinkPage {
   protected readonly error = signal<string | null>(null);
 
   async reset(): Promise<void> {
-    if (!confirm('Générer un nouveau lien ? L’ancien ne fonctionnera plus.')) return;
+    if (!confirm('Un nouveau lien ? L’ancien arrêtera de marcher, pense à le remplacer partout.'))
+      return;
     this.busy.set(true);
     this.error.set(null);
     try {

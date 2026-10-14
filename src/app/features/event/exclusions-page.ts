@@ -26,19 +26,19 @@ import { EventStore } from './event-store';
           <p>
             {{
               d.event.status === 'drawn'
-                ? 'Le tirage a déjà eu lieu.'
-                : 'Cette étape s’ouvre quand l’organisateur ferme la liste.'
+                ? 'Le tirage a déjà eu lieu. Trop tard pour les arrangements !'
+                : 'Cette étape s’ouvre quand l’orga ferme la liste. Patience !'
             }}
           </p>
         </div>
       } @else {
         <section class="card">
-          <span class="eyebrow">Étape 2 · En secret</span>
-          <h2>Quelqu’un à qui vous préférez ne pas offrir ?</h2>
+          <span class="eyebrow">Étape 2 · Top secret</span>
+          <h2>Quelqu’un que tu préfères éviter ?</h2>
           <p class="muted">
-            Cochez les personnes que vous ne voulez pas tirer au sort, ou personne.
-            <strong>Personne ne verra jamais vos choix</strong>, pas même l’organisateur. Vous
-            pouvez les modifier jusqu’au tirage.
+            Coche les personnes que tu ne veux pas tirer au sort, ou personne.
+            <strong>Personne ne verra jamais tes choix</strong>, même pas l’orga. Tu peux changer
+            d’avis jusqu’au tirage.
           </p>
 
           @if (error(); as e) {
@@ -69,7 +69,7 @@ import { EventStore } from './event-store';
             </div>
             @if (limitReached()) {
               <p class="muted small">
-                Vous devez laisser au moins une personne à qui vous pourriez offrir un cadeau.
+                Il faut quand même laisser au moins une personne à qui offrir un cadeau !
               </p>
             }
 
@@ -84,7 +84,7 @@ import { EventStore } from './event-store';
                   busy()
                     ? 'Enregistrement…'
                     : selected().size === 0
-                      ? '✓ N’importe qui me va'
+                      ? '✓ Tout le monde me va'
                       : '✓ Valider mes choix'
                 }}
               </button>

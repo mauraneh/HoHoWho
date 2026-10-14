@@ -21,12 +21,12 @@ import { rememberKey } from '../../core/personal-link';
     <div class="container narrow center">
       @if (error(); as e) {
         <div class="card">
-          <h1>Lien non valable</h1>
+          <h1>Oups, ce lien ne marche plus</h1>
           <p class="muted">{{ e }}</p>
           <a routerLink="/sign-in" class="btn">Retour à l’accueil</a>
         </div>
       } @else {
-        <h1 class="opening">Un instant…</h1>
+        <h1 class="opening">On t’ouvre la porte…</h1>
       }
     </div>
   `,

@@ -23,6 +23,8 @@ describe('format helpers', () => {
     expect(errorMessage(new BackendError('Waiting for 2 participant(s) to validate'))).toContain(
       '2',
     );
-    expect(errorMessage(new Error('internal details'))).toBe('Une erreur est survenue. Réessayez.');
+    expect(errorMessage(new Error('internal details'))).toBe(
+      'Oups, quelque chose a coincé. Réessaie.',
+    );
   });
 });

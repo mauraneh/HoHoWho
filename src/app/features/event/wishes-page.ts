@@ -15,7 +15,7 @@ import { AVOID, GIFT_STYLES, INTERESTS, Option } from '../../recommendations/que
 import { EventStore } from './event-store';
 
 const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
-  1: 'J’adorerais',
+  1: 'J’en rêve',
   2: 'J’aimerais bien',
   3: 'Pourquoi pas',
 };
@@ -32,13 +32,13 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
     <section class="card">
       <h2>Mes envies</h2>
       <p class="muted small">
-        Seuls vous et votre Père Noël secret voyez ces réponses. Elles servent aux idées cadeaux qui
-        lui sont proposées.
+        Seuls toi et ton Père Noël secret voyez ces réponses. Elles l’aident à viser juste (et à
+        t’éviter un douzième mug).
       </p>
 
       @if (loaded()) {
         <fieldset class="field">
-          <legend>Qu’est-ce qui vous plaît ?</legend>
+          <legend>Qu’est-ce qui te plaît ?</legend>
           <div class="chips">
             @for (o of interests; track o.id) {
               <label class="chip-toggle">
@@ -54,7 +54,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
         </fieldset>
 
         <fieldset class="field">
-          <legend>Quel genre de cadeaux vous fait plaisir ?</legend>
+          <legend>Quel genre de cadeaux te fait plaisir ?</legend>
           <div class="chips">
             @for (o of giftStyles; track o.id) {
               <label class="chip-toggle">
@@ -70,7 +70,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
         </fieldset>
 
         <fieldset class="field">
-          <legend>À éviter</legend>
+          <legend>À éviter absolument</legend>
           <div class="chips">
             @for (o of avoid; track o.id) {
               <label class="chip-toggle">
@@ -102,7 +102,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
             maxlength="1000"
             [value]="answers().notes"
             (input)="setText('notes', $event)"
-            placeholder="Couleurs préférées, allergies, ce que vous avez déjà…"
+            placeholder="Couleurs préférées, allergies, ce que tu as déjà en trois exemplaires…"
           ></textarea>
         </div>
 
@@ -113,10 +113,10 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
             [disabled]="saving()"
             (click)="saveAnswers()"
           >
-            {{ saving() ? 'Enregistrement…' : 'Enregistrer mes envies' }}
+            {{ saving() ? 'Enregistrement…' : 'Mettre dans la hotte' }}
           </button>
           @if (saved()) {
-            <span class="muted small" role="status">Enregistré ✓</span>
+            <span class="muted small" role="status">C’est dans la hotte ✓</span>
           }
         </div>
       } @else {
@@ -125,7 +125,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
     </section>
 
     <section class="card">
-      <h2>Ma liste de souhaits</h2>
+      <h2>Ma lettre au Père Noël</h2>
       @if (wishlist().length) {
         <ul class="list">
           @for (item of wishlist(); track item.id) {
@@ -155,14 +155,15 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
         </ul>
       } @else {
         <p class="muted">
-          Votre liste est vide. Ajoutez quelques idées pour aider votre Père Noël secret.
+          Ta lettre est vide. Ajoute quelques idées pour donner un coup de pouce à ton Père Noël
+          secret.
         </p>
       }
 
       <form [formGroup]="itemForm" (ngSubmit)="addItem()" class="add-item" novalidate>
-        <h3>Ajouter un souhait</h3>
+        <h3>Ajouter une idée</h3>
         <div class="field">
-          <label for="title">Qu’aimeriez-vous ?</label>
+          <label for="title">Qu’est-ce qui te ferait plaisir ?</label>
           <input id="title" formControlName="title" maxlength="120" />
         </div>
         <div class="field-row">
@@ -171,9 +172,9 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
             <input id="price" type="number" min="0" formControlName="price" />
           </div>
           <div class="field">
-            <label for="priority">À quel point ?</label>
+            <label for="priority">À quel point tu en rêves ?</label>
             <select id="priority" formControlName="priority">
-              <option [ngValue]="1">J’adorerais</option>
+              <option [ngValue]="1">J’en rêve</option>
               <option [ngValue]="2">J’aimerais bien</option>
               <option [ngValue]="3">Pourquoi pas</option>
             </select>
@@ -196,7 +197,7 @@ const PRIORITY_LABELS: Record<WishlistItem['priority'], string> = {
           />
         </div>
         <button type="submit" class="btn btn-green" [disabled]="adding()">
-          Ajouter à ma liste
+          Ajouter à ma lettre
         </button>
       </form>
     </section>
