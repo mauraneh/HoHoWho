@@ -9,11 +9,12 @@ import {
 } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { formatBudget } from '../../core/format';
+import { Corners, Divider } from '../../shared/ornaments';
 import { EventStore } from './event-store';
 
 @Component({
   selector: 'app-event-shell',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, DatePipe, Corners, Divider],
   providers: [EventStore],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -27,19 +28,20 @@ import { EventStore } from './event-store';
       @if (store.detail(); as d) {
         <header class="card card-night banner">
           <div class="snow" aria-hidden="true"></div>
+          <app-corners />
           <div class="banner-body">
-            <span class="eyebrow">Secret Santa</span>
+            <span class="script banner-kicker">Secret Santa</span>
             <h1>{{ d.event.name }}</h1>
+            <app-divider />
             <div class="meta">
+              <span>{{
+                d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date to be decided'
+              }}</span>
+              <span aria-hidden="true">✦</span>
+              <span>{{ budget() }}</span>
+              <span aria-hidden="true">✦</span>
               <span
-                >📅
-                {{
-                  d.event.eventDate ? (d.event.eventDate | date: 'fullDate') : 'Date to be decided'
-                }}</span
-              >
-              <span>💰 {{ budget() }}</span>
-              <span
-                >👥 {{ d.participants.length }} participant{{
+                >{{ d.participants.length }} participant{{
                   d.participants.length === 1 ? '' : 's'
                 }}</span
               >
@@ -79,33 +81,56 @@ import { EventStore } from './event-store';
     .back {
       display: inline-block;
       margin-bottom: 0.9rem;
+      font-family: var(--font-caps);
+      font-size: 0.75rem;
       font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
       text-decoration: none;
     }
     .banner {
-      padding: 1.8rem 1.6rem;
+      overflow: hidden;
+      padding: 2.4rem 2rem 2.2rem;
+      text-align: center;
     }
     .banner-body {
       position: relative;
     }
+    .banner-kicker {
+      display: block;
+      font-size: 2.2rem;
+      line-height: 1;
+      color: var(--gold-light);
+    }
     .banner h1 {
-      margin: 0.25rem 0 0.75rem;
+      margin: 0.3rem 0 0;
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+    }
+    .banner app-divider {
+      margin: 0.6rem auto;
     }
     .meta {
       display: flex;
       flex-wrap: wrap;
-      gap: 0.5rem;
+      justify-content: center;
+      gap: 0.6rem;
+      font-family: var(--font-caps);
+      font-size: 0.78rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgb(247 240 225 / 85%);
     }
-    .meta span {
-      padding: 0.25rem 0.75rem;
-      border-radius: 999px;
-      background: rgb(251 247 240 / 12%);
-      font-size: 0.875rem;
+    .meta span[aria-hidden] {
+      color: var(--gold);
     }
     .description {
-      margin: 1rem 0 0;
+      max-width: 40rem;
+      margin: 1rem auto 0;
       white-space: pre-line;
-      color: rgb(251 247 240 / 85%);
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-style: italic;
+      color: rgb(247 240 225 / 85%);
     }
     .dot {
       display: inline-block;
@@ -113,7 +138,7 @@ import { EventStore } from './event-store';
       height: 8px;
       margin-left: 0.3rem;
       border-radius: 50%;
-      background: var(--berry);
+      background: var(--crimson);
       vertical-align: middle;
     }
   `,

@@ -3,17 +3,19 @@ import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { HohowhoBackend } from './core/backend/hohowho-backend';
 import { errorMessage, initials } from './core/format';
 import { DATA_SOURCE } from './core/tokens';
+import { Holly } from './shared/ornaments';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink],
+  imports: [RouterOutlet, RouterLink, Holly],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="topbar">
       <div class="topbar-inner">
         <a routerLink="/events" class="brand" aria-label="HoHoWho home">
-          <span class="logo" aria-hidden="true">🎁</span>
-          <span class="wordmark">Ho<em>Ho</em>Who</span>
+          <app-holly [size]="40" />
+          <span class="wordmark">HoHoWho</span>
+          <span class="tagline">Secret Santa</span>
         </a>
         @if (user(); as u) {
           <nav class="row" aria-label="Account">
@@ -39,7 +41,8 @@ import { DATA_SOURCE } from './core/tokens';
     </main>
 
     <footer class="footer muted small">
-      <p>Made with 🎄 · HoHoWho, the secret Secret Santa</p>
+      <p class="footer-mark">HoHoWho</p>
+      <p>The secret Secret Santa · free & ad-free</p>
       @if (isMock) {
         <p>
           Demo mode: data lives only in this browser.
@@ -53,15 +56,20 @@ import { DATA_SOURCE } from './core/tokens';
       position: sticky;
       top: 0;
       z-index: 10;
-      background: rgb(18 55 42 / 96%);
-      backdrop-filter: blur(8px);
-      color: var(--snow);
-      border-bottom: 3px solid var(--gold);
+      color: var(--ivory);
+      background:
+        repeating-linear-gradient(45deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 10px),
+        linear-gradient(180deg, var(--emerald) 0%, var(--emerald-deep) 100%);
+      box-shadow:
+        0 1px 0 var(--gold),
+        0 4px 0 var(--emerald-deep),
+        0 5px 0 rgb(201 162 90 / 60%),
+        0 10px 24px -12px rgb(0 0 0 / 50%);
     }
     .topbar-inner {
-      max-width: 1000px;
+      max-width: 1040px;
       margin: 0 auto;
-      padding: 0.6rem 1rem;
+      padding: 0.45rem 1rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -70,33 +78,33 @@ import { DATA_SOURCE } from './core/tokens';
     .brand {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
-      color: var(--snow);
+      gap: 0.4rem;
+      color: var(--gold-light);
       text-decoration: none;
     }
-    .logo {
-      display: grid;
-      place-items: center;
-      width: 2.2rem;
-      height: 2.2rem;
-      border-radius: 12px;
-      background: var(--gold);
-      font-size: 1.2rem;
-      transform: rotate(-6deg);
-    }
     .wordmark {
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 1.45rem;
-      letter-spacing: -0.02em;
+      font-family: var(--font-script);
+      font-size: 2.2rem;
+      line-height: 1;
+      padding-top: 0.2rem;
     }
-    .wordmark em {
-      color: var(--gold);
-      font-style: italic;
+    .tagline {
+      font-family: var(--font-caps);
+      font-size: 0.62rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgb(247 240 225 / 65%);
+      margin-left: 0.35rem;
+      padding-left: 0.6rem;
+      border-left: 1px solid rgb(201 162 90 / 50%);
     }
     .nav-link {
-      color: var(--snow);
+      color: var(--ivory);
+      font-family: var(--font-caps);
+      font-size: 0.75rem;
       font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
       text-decoration: none;
     }
     .me {
@@ -107,29 +115,42 @@ import { DATA_SOURCE } from './core/tokens';
       width: 1.9rem;
       height: 1.9rem;
       margin-right: 0.4rem;
-      background: var(--gold);
     }
     .me-name {
-      color: var(--gold-soft);
+      color: var(--gold-light);
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
       font-weight: 600;
     }
     .signout {
       background: transparent;
-      color: var(--snow);
-      border-color: rgb(251 247 240 / 35%);
+      color: var(--ivory);
+      border-color: rgb(201 162 90 / 60%);
     }
-    @media (max-width: 560px) {
+    nav {
+      flex-wrap: nowrap;
+    }
+    @media (max-width: 600px) {
       .me-name,
-      .nav-link {
+      .nav-link,
+      .tagline {
         display: none;
+      }
+      .wordmark {
+        font-size: 1.8rem;
       }
     }
     .footer {
       text-align: center;
-      padding: 2.5rem 1rem;
+      padding: 2.5rem 1rem 3rem;
     }
     .footer p {
-      margin: 0.25rem 0;
+      margin: 0.2rem 0;
+    }
+    .footer-mark {
+      font-family: var(--font-script);
+      font-size: 2rem;
+      color: var(--crimson);
     }
   `,
 })

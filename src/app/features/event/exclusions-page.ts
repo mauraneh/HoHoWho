@@ -33,7 +33,7 @@ import { EventStore } from './event-store';
         </div>
       } @else {
         <section class="card">
-          <span class="eyebrow eyebrow-dark">Step 2 · Private</span>
+          <span class="eyebrow">Step 2 · Private</span>
           <h2>Anyone you'd rather not give a gift to?</h2>
           <p class="muted">
             Tick the people you don't want to draw — or nobody.
@@ -100,9 +100,6 @@ import { EventStore } from './event-store';
     }
   `,
   styles: `
-    .eyebrow-dark {
-      color: var(--berry);
-    }
     .people {
       display: grid;
       gap: 0.6rem;
@@ -121,7 +118,7 @@ import { EventStore } from './event-store';
       transition: all 0.12s ease;
     }
     .person:hover {
-      border-color: var(--pine-3);
+      border-color: var(--gold);
     }
     .person input {
       position: absolute;
@@ -132,7 +129,7 @@ import { EventStore } from './event-store';
       outline-offset: 2px;
     }
     .person.on {
-      border-color: var(--berry);
+      border-color: var(--crimson);
       background: var(--danger-bg);
     }
     .person.on .name {

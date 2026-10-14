@@ -14,11 +14,12 @@ import { GifteeProfile } from '../../core/models';
 import { optionLabel } from '../../recommendations/questionnaire-options';
 import { GiftSuggestion } from '../../recommendations/recommendation.model';
 import { RecommendationService } from '../../recommendations/recommendation.service';
+import { Corners, Divider, Holly } from '../../shared/ornaments';
 import { EventStore } from './event-store';
 
 @Component({
   selector: 'app-giftee-page',
-  imports: [RouterLink],
+  imports: [RouterLink, Corners, Divider, Holly],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (error(); as e) {
@@ -30,11 +31,13 @@ import { EventStore } from './event-store';
     } @else if (giftee(); as g) {
       <section class="card card-night reveal">
         <div class="snow" aria-hidden="true"></div>
-        <div class="gift" aria-hidden="true">🎁</div>
+        <app-corners />
+        <app-holly [size]="72" />
         <span class="eyebrow">You are the Secret Santa of</span>
-        <h2 class="name">{{ g.participant.displayName }}</h2>
-        <p class="muted small">Shhh 🤫 keep it secret! Ask questions with anonymous messages.</p>
-        <a routerLink="../messages" class="btn btn-gold btn-sm">✉️ Send an anonymous message</a>
+        <h2 class="script name">{{ g.participant.displayName }}</h2>
+        <app-divider />
+        <p class="muted">Shhh… keep it secret. Ask questions with anonymous messages.</p>
+        <a routerLink="../messages" class="btn btn-gold btn-sm">✉ Send an anonymous message</a>
       </section>
 
       <div class="grid pair">
@@ -144,26 +147,36 @@ import { EventStore } from './event-store';
   `,
   styles: `
     .reveal {
+      overflow: hidden;
       text-align: center;
-      padding: 2.25rem 1.5rem;
+      padding: 2.6rem 1.5rem 2.4rem;
     }
-    .reveal > * {
+    .reveal > :not(app-corners, .snow) {
       position: relative;
     }
-    .gift {
-      font-size: 3rem;
-      animation: wiggle 2.4s ease-in-out infinite;
+    .reveal app-holly,
+    .reveal .eyebrow {
+      display: flex;
+      justify-content: center;
     }
-    @keyframes wiggle {
-      0%,
-      100% {
-        transform: rotate(0);
+    .name {
+      font-size: clamp(3.6rem, 12vw, 5.6rem);
+      line-height: 1.05;
+      color: var(--gold-light);
+      margin: 0.3rem 0 0;
+      text-shadow: 0 3px 0 rgb(0 0 0 / 30%);
+      animation: reveal 1.2s ease-out both;
+    }
+    @keyframes reveal {
+      from {
+        opacity: 0;
+        letter-spacing: 0.2em;
+        filter: blur(6px);
       }
-      20% {
-        transform: rotate(-8deg) scale(1.05);
-      }
-      40% {
-        transform: rotate(6deg);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .name {
+        animation: none;
       }
     }
     .pair {
@@ -183,13 +196,15 @@ import { EventStore } from './event-store';
     }
     .idea {
       border: 1px solid var(--line);
-      border-radius: 10px;
+      border-top: 3px solid var(--crimson);
+      background: #fffdf7;
+      border-radius: 4px;
       padding: 0.9rem;
     }
     .reasons {
       margin: 0;
       padding-left: 1.1rem;
-      color: var(--green);
+      color: var(--emerald);
     }
   `,
 })

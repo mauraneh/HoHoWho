@@ -12,12 +12,13 @@ import { Router, RouterLink } from '@angular/router';
 import { HohowhoBackend } from '../../core/backend/hohowho-backend';
 import { errorMessage } from '../../core/format';
 import { InvitationPreview } from '../../core/models';
+import { BowRibbon, Corners, Divider } from '../../shared/ornaments';
 import { SignInForm } from '../auth/sign-in-form';
 
 /** Invitation landing page: works signed out (asks for an e-mail) and signed in (one click). */
 @Component({
   selector: 'app-join-page',
-  imports: [RouterLink, DatePipe, SignInForm],
+  imports: [RouterLink, DatePipe, SignInForm, BowRibbon, Corners, Divider],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container narrow">
@@ -32,12 +33,16 @@ import { SignInForm } from '../auth/sign-in-form';
       } @else if (preview(); as p) {
         <div class="card card-night invite">
           <div class="snow" aria-hidden="true"></div>
-          <span class="eyebrow">{{ p.ownerName }} invites you to</span>
+          <app-corners />
+          <span class="script kicker">You are invited</span>
+          <span class="eyebrow">{{ p.ownerName }} invites you to the Secret Santa</span>
           <h1>{{ p.eventName }}</h1>
+          <app-divider />
           @if (p.eventDate) {
-            <p class="muted">🎄 {{ p.eventDate | date: 'fullDate' }}</p>
+            <p class="muted caps date">{{ p.eventDate | date: 'fullDate' }}</p>
           }
         </div>
+        <app-bow-ribbon class="ribbon" />
 
         <div class="card">
           @if (!user()) {
@@ -74,15 +79,34 @@ import { SignInForm } from '../auth/sign-in-form';
   `,
   styles: `
     .invite {
-      position: relative;
+      overflow: hidden;
       text-align: center;
-      margin-top: 1rem;
-      padding: 2.25rem 1.5rem;
+      margin: 1rem 0 0;
+      padding: 2.6rem 1.75rem 2.2rem;
+    }
+    .invite > :not(app-corners, .snow) {
+      position: relative;
+    }
+    .invite .eyebrow {
+      display: block;
+    }
+    .kicker {
+      display: block;
+      font-size: 2.6rem;
+      line-height: 1;
+      color: var(--gold-light);
+      margin-bottom: 0.4rem;
     }
     .invite h1 {
-      font-size: clamp(2rem, 6vw, 2.8rem);
-      margin: 0.5rem 0;
-      position: relative;
+      font-size: clamp(2.2rem, 7vw, 3rem);
+      margin: 0.5rem 0 0;
+    }
+    .date {
+      font-size: 0.8rem;
+      margin: 0;
+    }
+    .ribbon {
+      margin: -0.4rem -1rem 0.6rem;
     }
     .big-icon {
       font-size: 2.5rem;

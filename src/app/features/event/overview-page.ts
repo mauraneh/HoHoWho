@@ -33,7 +33,7 @@ type Step = 'done' | 'current' | 'todo';
       <ol class="stepper card" aria-label="Progress">
         @for (s of steps(); track s.title) {
           <li [class]="s.state">
-            <span class="bullet">{{ s.state === 'done' ? '✓' : $index + 1 }}</span>
+            <span class="bullet">{{ s.state === 'done' ? '✓' : ['I', 'II', 'III'][$index] }}</span>
             <span class="step-text">
               <strong>{{ s.title }}</strong>
               <span class="muted small">{{ s.detail }}</span>
@@ -163,7 +163,7 @@ type Step = 'done' | 'current' | 'todo';
 
       @if (d.isOwner) {
         <section class="card organiser">
-          <span class="eyebrow eyebrow-dark">Organiser</span>
+          <span class="eyebrow">Organiser</span>
           @switch (d.event.status) {
             @case ('open') {
               <h2>1 · Invite everyone</h2>
@@ -343,22 +343,31 @@ type Step = 'done' | 'current' | 'todo';
       flex: none;
       display: grid;
       place-items: center;
-      width: 2rem;
-      height: 2rem;
+      width: 2.3rem;
+      height: 2.3rem;
       border-radius: 50%;
-      border: 2px solid var(--line);
-      font-weight: 800;
+      border: 1px solid var(--gold);
+      font-family: var(--font-caps);
+      font-weight: 700;
+      font-size: 0.85rem;
+      color: var(--muted);
     }
     .current .bullet {
-      background: var(--berry);
-      border-color: var(--berry);
-      color: #fff;
-      box-shadow: 0 0 0 5px rgb(192 40 63 / 15%);
+      background: var(--crimson);
+      color: var(--ivory);
+      box-shadow:
+        inset 0 0 0 2px var(--crimson),
+        inset 0 0 0 3px var(--gold-light),
+        0 0 0 5px rgb(160 24 42 / 15%);
     }
     .done .bullet {
-      background: var(--pine-2);
-      border-color: var(--pine-2);
-      color: #fff;
+      background: var(--emerald);
+      color: var(--gold-light);
+    }
+    .step-text strong {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      color: var(--emerald);
     }
     .step-text {
       display: flex;
@@ -371,22 +380,22 @@ type Step = 'done' | 'current' | 'todo';
       }
     }
     .cta {
-      border: 2px solid var(--berry);
+      border-top: 4px solid var(--crimson);
     }
     .cta-done {
-      border-color: var(--pine-3);
+      border-top-color: var(--emerald-light);
     }
     .progress {
       height: 8px;
       border-radius: 999px;
-      background: #f1e9dc;
+      background: #efe5d0;
       overflow: hidden;
       margin-bottom: 0.5rem;
     }
     .progress span {
       display: block;
       height: 100%;
-      background: linear-gradient(90deg, var(--pine-3), var(--gold));
+      background: linear-gradient(90deg, var(--emerald-light), var(--gold));
       transition: width 0.3s ease;
     }
     .person {
@@ -395,9 +404,6 @@ type Step = 'done' | 'current' | 'todo';
     }
     .leave {
       margin-top: 0.75rem;
-    }
-    .eyebrow-dark {
-      color: var(--berry);
     }
     .organiser hr {
       border: none;

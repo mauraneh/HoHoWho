@@ -25,8 +25,10 @@
     "@angular/forms": "^22.2.0",
     "@angular/platform-browser": "^22.2.0",
     "@angular/router": "^22.2.0",
+    "@fontsource-variable/cinzel": "^5.3.0",
+    "@fontsource-variable/cormorant-garamond": "^5.3.0",
     "@fontsource-variable/dm-sans": "^5.3.0",
-    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource/great-vibes": "^5.3.0",
     "@supabase/supabase-js": "^2.117.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"
