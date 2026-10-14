@@ -13,8 +13,7 @@ import { AccessPanel } from './access-panel';
       <h1 class="display">Secret<br />Santa<span class="dot">.</span></h1>
       <p class="lead">
         Un lien, des prénoms, et le hasard fait le reste. Chacun dit ce qui lui ferait plaisir, les
-        lutins tirent au sort, et personne ne sait qui gâte qui. Gratuit, sans pub, sans mot de
-        passe.
+        lutins tirent au sort, et personne ne sait qui gâte qui.
       </p>
     </section>
 

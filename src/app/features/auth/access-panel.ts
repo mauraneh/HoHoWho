@@ -32,7 +32,7 @@ import { PersonalLinkCard } from '../../shared/personal-link-card';
     } @else {
       <p class="lead-in">
         <strong>Invité·e&nbsp;?</strong> Ouvre juste le lien qu’on t’a envoyé : un prénom et hop, tu
-        es dans la hotte. Pas d’e-mail, pas de mot de passe.
+        es dans la hotte.
       </p>
 
       <form class="block" (ngSubmit)="openLink()">

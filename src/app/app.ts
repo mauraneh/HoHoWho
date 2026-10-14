@@ -43,7 +43,7 @@ import { Snowfall } from './shared/snowfall';
     </main>
 
     <footer class="footer muted small">
-      <p>Fait avec amour et beaucoup de neige · gratuit et sans pub</p>
+      <p>Fait avec amour et beaucoup de neige ❄</p>
       @if (isMock) {
         <p>
           Mode démo : tout reste dans ton navigateur.
