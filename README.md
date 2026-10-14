@@ -133,14 +133,15 @@ npx serve dist/hohowho/browser    # any static file server works
 
 ### Configuration
 
-| Where                           | What                                                                                                                          |
-| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `src/environments/*.ts`         | Build-time switch: `dataSource: 'mock' \| 'supabase'`. No secrets.                                                            |
-| `config.json` (runtime)         | `{ "supabaseUrl", "supabaseAnonKey" }`. Generated, git-ignored, never committed.                                              |
-| `.env` (local only)             | Source for `config.json` locally. Template: `.env.example`.                                                                   |
-| GitHub repository **variables** | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `BASE_HREF`.                                                                    |
-| GitHub repository **secrets**   | Optional, for automatic Supabase deploys: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.            |
-| Edge Function secret (optional) | `ALLOWED_ORIGINS`: comma-separated CORS origins. Defaults to `*`, which is safe because auth uses bearer tokens, not cookies. |
+| Where                             | What                                                                                                                          |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `src/environments/*.ts`           | Build-time switch: `dataSource: 'mock' \| 'supabase'`. No secrets.                                                            |
+| `config.json` (runtime)           | `{ "supabaseUrl", "supabaseAnonKey" }`. Generated, git-ignored, never committed.                                              |
+| `.env` (local only)               | Source for `config.json` locally. Template: `.env.example`.                                                                   |
+| GitHub repository **variables**   | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, optional `BASE_HREF`.                                                                    |
+| GitHub environment `SUPABASE_URL` | Same variables and secrets can live in this environment (Settings → Environments); the CI jobs read it.                       |
+| GitHub repository **secrets**     | Optional, for automatic Supabase deploys: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`.            |
+| Edge Function secret (optional)   | `ALLOWED_ORIGINS`: comma-separated CORS origins. Defaults to `*`, which is safe because auth uses bearer tokens, not cookies. |
 
 ---
 

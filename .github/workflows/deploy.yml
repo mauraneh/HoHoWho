@@ -20,6 +20,9 @@ jobs:
   frontend:
     name: Lint, test & build
     runs-on: ubuntu-latest
+    # Supabase values (SUPABASE_URL, SUPABASE_ANON_KEY and the deploy secrets) live in this
+    # GitHub environment (Settings → Environments). Repository-level values work too.
+    environment: SUPABASE_URL
     steps:
       - uses: actions/checkout@v5
 
@@ -114,6 +117,9 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [database, edge-functions]
     runs-on: ubuntu-latest
+    # Supabase values (SUPABASE_URL, SUPABASE_ANON_KEY and the deploy secrets) live in this
+    # GitHub environment (Settings → Environments). Repository-level values work too.
+    environment: SUPABASE_URL
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
