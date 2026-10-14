@@ -138,7 +138,8 @@ jobs:
       - uses: supabase/setup-cli@v1
         if: steps.check.outputs.enabled == 'true'
         with:
-          version: latest
+          # Pinned: resolving "latest" calls the GitHub API and can hit its rate limit.
+          version: 2.119.0
       - name: Apply migrations and deploy functions
         if: steps.check.outputs.enabled == 'true'
         run: |
