@@ -149,10 +149,17 @@ jobs:
       - name: Sync organisers
         if: steps.check.outputs.enabled == 'true'
         env:
-          ORGANIZER_EMAILS: ${{ vars.ORGANIZER_EMAILS || secrets.ORGANIZER_EMAILS }}
+          # Prefer a secret: variables are printed in the (public) workflow logs.
+          ORGANIZER_EMAILS: ${{ secrets.ORGANIZER_EMAILS || vars.ORGANIZER_EMAILS }}
         run: node scripts/sync-organizers.mjs
       - name: Sync auth settings and e-mail templates
         if: steps.check.outputs.enabled == 'true'
         env:
           SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+          SMTP_HOST: ${{ vars.SMTP_HOST || secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT || secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          SMTP_SENDER_EMAIL: ${{ vars.SMTP_SENDER_EMAIL || secrets.SMTP_SENDER_EMAIL }}
+          SMTP_SENDER_NAME: ${{ vars.SMTP_SENDER_NAME }}
         run: node scripts/sync-auth-config.mjs

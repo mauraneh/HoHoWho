@@ -193,6 +193,17 @@ Under **Settings → Secrets and variables → Actions**:
 
 The Supabase job also runs `scripts/sync-auth-config.mjs`. It installs the French, on-brand sign-in e-mails (`supabase/templates/magic-link.html` and `confirmation.html`, whose header image is `public/email/header.jpg`). It also adds `<site>/**` to the auth redirect allow-list and sets the site URL if it is still the default. Set the `SITE_URL` variable when the site is not served from `https://<owner>.github.io/<repo>/`.
 
+**Sign-in e-mails (free SMTP).** Supabase's built-in sender only reaches your Supabase team, and on the free plan custom e-mail templates require your own SMTP server. With a free [Brevo](https://www.brevo.com) account (300 e-mails a day, no credit card), add these secrets to the GitHub environment and the deploy configures everything:
+
+| Secret              | Value                                      |
+| ------------------- | ------------------------------------------ |
+| `SMTP_HOST`         | `smtp-relay.brevo.com`                     |
+| `SMTP_USER`         | Your Brevo SMTP login (Brevo → SMTP & API) |
+| `SMTP_PASS`         | A Brevo SMTP key                           |
+| `SMTP_SENDER_EMAIL` | A sender address verified in Brevo         |
+
+`SMTP_PORT` (default `587`) and `SMTP_SENDER_NAME` (default `HoHoWho`) are optional.
+
 When `ORGANIZER_EMAILS` is set (repository or environment variable), the Supabase job also syncs the organiser list: only those addresses see "Nouveau Secret Santa" and can create events; everyone else joins through invitation links.
 
 Pull requests run steps 1–3 without deploying.
