@@ -4,12 +4,14 @@ import { HohowhoBackend } from './core/backend/hohowho-backend';
 import { errorMessage, initials } from './core/format';
 import { DATA_SOURCE } from './core/tokens';
 import { Holly } from './shared/ornaments';
+import { Snowfall } from './shared/snowfall';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Holly],
+  imports: [RouterOutlet, RouterLink, Holly, Snowfall],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-snowfall />
     <header class="topbar">
       <div class="topbar-inner">
         <a routerLink="/events" class="brand" aria-label="Accueil HoHoWho">
@@ -143,6 +145,22 @@ import { Holly } from './shared/ornaments';
       .wordmark {
         font-size: 1.8rem;
       }
+      .topbar-inner {
+        gap: 0.5rem;
+      }
+      .brand app-holly,
+      .me {
+        display: none;
+      }
+      .signout {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.62rem;
+      }
+    }
+    main,
+    .footer {
+      position: relative;
+      z-index: 1;
     }
     .footer {
       text-align: center;
@@ -153,8 +171,8 @@ import { Holly } from './shared/ornaments';
     }
     .footer-mark {
       font-family: var(--font-script);
-      font-size: 2rem;
-      color: var(--crimson);
+      font-size: 2.2rem;
+      color: var(--gold-light);
     }
   `,
 })

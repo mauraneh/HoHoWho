@@ -1,0 +1,170 @@
+<!doctype html>
+<!--
+  Source of public/email/header.jpg (the header of the sign-in e-mails).
+  E-mail clients do not load web fonts, so the calligraphic header is shipped as an image.
+  Rendered at 1200x360 (2x of the 600x180 display size) with a headless browser (JPEG, quality 88).
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      @font-face {
+        font-family: 'Great Vibes';
+        src: url('../../node_modules/@fontsource/great-vibes/files/great-vibes-latin-400-normal.woff2');
+      }
+      @font-face {
+        font-family: 'Cinzel';
+        src: url('../../node_modules/@fontsource-variable/cinzel/files/cinzel-latin-wght-normal.woff2');
+        font-weight: 400 900;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 360px;
+        overflow: hidden;
+      }
+      .header {
+        position: relative;
+        width: 1200px;
+        height: 360px;
+        background:
+          radial-gradient(circle at 18% 10%, rgb(201 162 90 / 28%), transparent 40%),
+          radial-gradient(circle at 88% 95%, rgb(160 24 42 / 45%), transparent 45%),
+          repeating-linear-gradient(45deg, rgb(255 255 255 / 3%) 0 3px, transparent 3px 18px),
+          linear-gradient(170deg, #173d2c 0%, #0f2b1f 100%);
+        text-align: center;
+        color: #e6cd8e;
+        overflow: hidden;
+      }
+      .frame {
+        position: absolute;
+        inset: 22px;
+        border: 2px solid #c9a25a;
+      }
+      .frame::after {
+        content: '';
+        position: absolute;
+        inset: 10px;
+        border: 1px solid rgb(230 205 142 / 55%);
+      }
+      .corner {
+        position: absolute;
+        width: 96px;
+        height: 96px;
+        color: #c9a25a;
+      }
+      .tl {
+        top: 30px;
+        left: 30px;
+      }
+      .tr {
+        top: 30px;
+        right: 30px;
+        transform: scaleX(-1);
+      }
+      .bl {
+        bottom: 30px;
+        left: 30px;
+        transform: scaleY(-1);
+      }
+      .br {
+        bottom: 30px;
+        right: 30px;
+        transform: scale(-1);
+      }
+      .snow {
+        position: absolute;
+        inset: 0;
+        background-image:
+          radial-gradient(3px 3px at 40px 60px, #fff 50%, transparent 51%),
+          radial-gradient(4px 4px at 260px 140px, rgb(255 255 255 / 80%) 50%, transparent 51%),
+          radial-gradient(5px 5px at 160px 280px, rgb(255 255 255 / 60%) 50%, transparent 51%),
+          radial-gradient(3px 3px at 340px 40px, #fff 50%, transparent 51%),
+          radial-gradient(2px 2px at 110px 200px, rgb(255 255 255 / 90%) 50%, transparent 51%);
+        background-size: 400px 360px;
+        opacity: 0.6;
+      }
+      .kicker {
+        position: relative;
+        padding-top: 70px;
+        font-family: 'Cinzel', serif;
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: 0.32em;
+        color: rgb(247 240 225 / 85%);
+      }
+      .title {
+        position: relative;
+        font-family: 'Great Vibes', cursive;
+        font-size: 150px;
+        line-height: 1;
+        margin-top: 6px;
+        text-shadow: 0 4px 0 rgb(0 0 0 / 30%);
+      }
+      .holly {
+        position: absolute;
+        left: 50%;
+        bottom: 34px;
+        transform: translateX(-50%);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <div class="snow"></div>
+      <div class="frame"></div>
+      <svg class="corner tl" viewBox="0 0 64 64">
+        <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M4 60 V14 C4 8 8 4 14 4 H60" />
+          <path d="M14 26 C14 18 18 14 26 14 C32 14 34 20 30 23 C27 25 23 23 24 20" />
+          <path d="M22 4 C22 10 26 12 30 10" />
+          <path d="M4 22 C10 22 12 26 10 30" />
+        </g>
+      </svg>
+      <svg class="corner tr" viewBox="0 0 64 64">
+        <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M4 60 V14 C4 8 8 4 14 4 H60" />
+          <path d="M14 26 C14 18 18 14 26 14 C32 14 34 20 30 23 C27 25 23 23 24 20" />
+          <path d="M22 4 C22 10 26 12 30 10" />
+          <path d="M4 22 C10 22 12 26 10 30" />
+        </g>
+      </svg>
+      <svg class="corner bl" viewBox="0 0 64 64">
+        <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M4 60 V14 C4 8 8 4 14 4 H60" />
+          <path d="M14 26 C14 18 18 14 26 14 C32 14 34 20 30 23 C27 25 23 23 24 20" />
+          <path d="M22 4 C22 10 26 12 30 10" />
+          <path d="M4 22 C10 22 12 26 10 30" />
+        </g>
+      </svg>
+      <svg class="corner br" viewBox="0 0 64 64">
+        <g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+          <path d="M4 60 V14 C4 8 8 4 14 4 H60" />
+          <path d="M14 26 C14 18 18 14 26 14 C32 14 34 20 30 23 C27 25 23 23 24 20" />
+          <path d="M22 4 C22 10 26 12 30 10" />
+          <path d="M4 22 C10 22 12 26 10 30" />
+        </g>
+      </svg>
+      <div class="kicker">SECRET SANTA</div>
+      <div class="title">HoHoWho</div>
+      <svg class="holly" viewBox="0 0 80 48" width="120" height="72">
+        <path
+          d="M40 30 C30 14 14 22 4 10 C10 26 6 30 12 36 C18 30 26 38 40 30Z"
+          fill="#2f6b45"
+          stroke="#0f2b1f"
+          stroke-width="1.2"
+        />
+        <path
+          d="M40 30 C50 14 66 22 76 10 C70 26 74 30 68 36 C62 30 54 38 40 30Z"
+          fill="#3a7d53"
+          stroke="#0f2b1f"
+          stroke-width="1.2"
+        />
+        <circle cx="35" cy="34" r="5" fill="#b51f30" />
+        <circle cx="45" cy="34" r="5" fill="#c42a39" />
+        <circle cx="40" cy="41" r="5" fill="#a0182a" />
+      </svg>
+    </div>
+  </body>
+</html>

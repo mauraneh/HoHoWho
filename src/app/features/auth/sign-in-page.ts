@@ -1,14 +1,26 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import { safeReturnUrl } from '../../core/format';
 import { takeNext } from '../../core/pending-navigation';
 import { DATA_SOURCE } from '../../core/tokens';
+import { AdventCalendar } from '../../shared/advent-calendar';
+import { AdventDoor } from '../../shared/advent-door';
 import { Bauble, BowRibbon, Corners, Divider } from '../../shared/ornaments';
 import { SignInForm } from './sign-in-form';
 
 @Component({
   selector: 'app-sign-in-page',
-  imports: [SignInForm, Bauble, BowRibbon, Corners, Divider],
+  imports: [SignInForm, Bauble, BowRibbon, Corners, Divider, AdventDoor, AdventCalendar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="hero">
@@ -43,16 +55,33 @@ import { SignInForm } from './sign-in-form';
     <section class="container how">
       <span class="eyebrow">Comment ça marche</span>
       <h2 class="script how-title">Trois petites portes</h2>
-      <div class="doors">
-        @for (step of steps; track step.n) {
-          <article class="door card-crimson">
-            <span class="door-n">{{ step.n }}</span>
-            <span class="door-icon" aria-hidden="true">{{ step.icon }}</span>
-            <h3>{{ step.title }}</h3>
-            <p>{{ step.text }}</p>
-          </article>
+      <div class="doors" #doors>
+        @for (step of steps; track step.n; let i = $index) {
+          <app-advent-door
+            class="step-door"
+            [open]="stepsOpen()"
+            [peek]="!stepsOpen()"
+            [delay]="i * 350"
+            [tone]="i === 1 ? 'emerald' : 'crimson'"
+          >
+            <div front class="step-front">
+              <span class="door-n">{{ step.n }}</span>
+              <h3>{{ step.title }}</h3>
+            </div>
+            <div inside class="step-inside">
+              <span class="door-icon" aria-hidden="true">{{ step.icon }}</span>
+              <h3>{{ step.title }}</h3>
+              <p>{{ step.text }}</p>
+            </div>
+          </app-advent-door>
         }
       </div>
+
+      <app-bow-ribbon />
+      <span class="eyebrow">En attendant Noël</span>
+      <h2 class="script how-title">Le calendrier de l’Avent</h2>
+      <p class="muted calendar-hint">Ouvrez une case… ou toutes, on ne dira rien.</p>
+      <app-advent-calendar class="calendar" />
 
       @if (isMock) {
         <div class="card small demo">
@@ -71,8 +100,7 @@ import { SignInForm } from './sign-in-form';
       background:
         radial-gradient(circle at 15% 15%, rgb(201 162 90 / 20%), transparent 35%),
         radial-gradient(circle at 85% 85%, rgb(160 24 42 / 30%), transparent 40%),
-        repeating-linear-gradient(45deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 12px),
-        linear-gradient(170deg, var(--emerald) 0%, var(--emerald-deep) 100%);
+        repeating-linear-gradient(45deg, rgb(255 255 255 / 2%) 0 2px, transparent 2px 12px);
     }
     .bauble {
       position: absolute;
@@ -145,7 +173,7 @@ import { SignInForm } from './sign-in-form';
     }
     .how-title {
       font-size: 3rem;
-      color: var(--emerald);
+      color: var(--gold-light);
       margin-bottom: 1.5rem;
     }
     .doors {
@@ -155,33 +183,53 @@ import { SignInForm } from './sign-in-form';
       text-align: left;
       margin-bottom: 2rem;
     }
-    .door {
-      position: relative;
-      border-radius: 4px;
-      padding: 1.4rem 1.4rem 1.5rem;
-      min-height: 210px;
+    .step-door {
+      height: 240px;
+    }
+    .step-front {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
     }
     .door-n {
       font-family: var(--font-caps);
-      font-size: 2.2rem;
+      font-size: 2.6rem;
       font-weight: 700;
       color: var(--gold-light);
       line-height: 1;
     }
-    .door-icon {
-      position: absolute;
-      right: 1.2rem;
-      top: 1.1rem;
-      font-size: 1.8rem;
-    }
-    .door h3 {
+    .step-front h3 {
       color: var(--ivory);
-      margin: 1.4rem 0 0.4rem;
-      font-size: 1.4rem;
-    }
-    .door p {
       margin: 0;
-      color: rgb(247 240 225 / 85%);
+      font-size: 1.5rem;
+    }
+    .step-inside {
+      height: 100%;
+      padding: 1.1rem 1.1rem 1.1rem 30%;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .door-icon {
+      font-size: 1.9rem;
+    }
+    .step-inside h3 {
+      color: var(--gold-light);
+      margin: 0.3rem 0;
+      font-size: 1.25rem;
+    }
+    .step-inside p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: rgb(247 240 225 / 88%);
+    }
+    .calendar-hint {
+      margin-top: -0.75rem;
+    }
+    .calendar {
+      display: block;
+      margin: 1.25rem 0 2.5rem;
     }
     .demo {
       text-align: left;
@@ -204,6 +252,27 @@ export class SignInPage {
 
   /** Bound from the `returnUrl` query parameter. */
   readonly returnUrl = input<string>();
+
+  private readonly doors = viewChild.required<ElementRef<HTMLElement>>('doors');
+  /** The three step doors swing open when they scroll into view. */
+  protected readonly stepsOpen = signal(false);
+
+  constructor() {
+    const destroyRef = inject(DestroyRef);
+    afterNextRender(() => {
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((e) => e.isIntersecting)) {
+            setTimeout(() => this.stepsOpen.set(true), 400);
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.45 },
+      );
+      observer.observe(this.doors().nativeElement);
+      destroyRef.onDestroy(() => observer.disconnect());
+    });
+  }
 
   protected readonly steps = [
     {

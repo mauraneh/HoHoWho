@@ -150,3 +150,8 @@ jobs:
         env:
           ORGANIZER_EMAILS: ${{ vars.ORGANIZER_EMAILS || secrets.ORGANIZER_EMAILS }}
         run: node scripts/sync-organizers.mjs
+      - name: Sync auth settings and e-mail templates
+        if: steps.check.outputs.enabled == 'true'
+        env:
+          SITE_URL: ${{ vars.SITE_URL || format('https://{0}.github.io/{1}/', github.repository_owner, github.event.repository.name) }}
+        run: node scripts/sync-auth-config.mjs

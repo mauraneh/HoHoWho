@@ -191,6 +191,8 @@ Under **Settings → Secrets and variables → Actions**:
 4. **deploy-pages:** publishes to `https://<owner>.github.io/<repo>/`.
 5. **deploy-supabase:** `supabase db push` and `functions deploy`, only when the Supabase secrets are set.
 
+The Supabase job also runs `scripts/sync-auth-config.mjs`. It installs the French, on-brand sign-in e-mails (`supabase/templates/magic-link.html` and `confirmation.html`, whose header image is `public/email/header.jpg`). It also adds `<site>/**` to the auth redirect allow-list and sets the site URL if it is still the default. Set the `SITE_URL` variable when the site is not served from `https://<owner>.github.io/<repo>/`.
+
 When `ORGANIZER_EMAILS` is set (repository or environment variable), the Supabase job also syncs the organiser list: only those addresses see "Nouveau Secret Santa" and can create events; everyone else joins through invitation links.
 
 Pull requests run steps 1–3 without deploying.

@@ -1,0 +1,266 @@
+<!doctype html>
+<!--
+  Supabase Auth e-mail template: sign-up confirmation (first sign-in of a new address).
+  Installed by scripts/sync-auth-config.mjs; %%SITE%% is replaced with the public site URL.
+  Go template variables: {{ .ConfirmationURL }}, {{ .Data.display_name }} (user metadata).
+  Table layout + inline styles for maximum e-mail client compatibility.
+-->
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light only" />
+    <title>Bienvenue sur HoHoWho</title>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #0f2b1f">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: #0f2b1f">
+      Confirmez votre adresse et rejoignez votre Secret Santa. ✦
+    </div>
+    <table
+      role="presentation"
+      width="100%"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      style="
+        background-color: #0f2b1f;
+        background-image: linear-gradient(180deg, #173d2c 0%, #0f2b1f 100%);
+      "
+    >
+      <tr>
+        <td align="center" style="padding: 32px 12px">
+          <table
+            role="presentation"
+            width="600"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="width: 100%; max-width: 600px"
+          >
+            <!-- Header -->
+            <tr>
+              <td align="center" bgcolor="#173d2c" style="border-radius: 6px 6px 0 0">
+                <img
+                  src="%%SITE%%email/header.jpg"
+                  width="600"
+                  alt="HoHoWho · Secret Santa"
+                  style="
+                    display: block;
+                    width: 100%;
+                    max-width: 600px;
+                    height: auto;
+                    border: 0;
+                    border-radius: 6px 6px 0 0;
+                    color: #e6cd8e;
+                    font-family: Georgia, 'Times New Roman', serif;
+                    font-size: 32px;
+                    font-style: italic;
+                  "
+                />
+              </td>
+            </tr>
+            <!-- Ribbon -->
+            <tr>
+              <td
+                height="14"
+                bgcolor="#a0182a"
+                style="
+                  height: 14px;
+                  line-height: 14px;
+                  font-size: 0;
+                  background-color: #a0182a;
+                  background-image: linear-gradient(180deg, #c42a39, #a0182a 50%, #7c1019);
+                  border-top: 2px solid #c9a25a;
+                  border-bottom: 2px solid #c9a25a;
+                "
+              >
+                &nbsp;
+              </td>
+            </tr>
+            <!-- Paper card -->
+            <tr>
+              <td
+                bgcolor="#fffaf0"
+                style="background-color: #fffaf0; padding: 10px; border-radius: 0 0 6px 6px"
+              >
+                <table
+                  role="presentation"
+                  width="100%"
+                  cellpadding="0"
+                  cellspacing="0"
+                  border="0"
+                  style="border: 1px solid #c9a25a"
+                >
+                  <tr>
+                    <td
+                      style="
+                        border: 1px solid #e6cd8e;
+                        margin: 4px;
+                        padding: 38px 34px 34px;
+                        font-family: Georgia, 'Times New Roman', serif;
+                        color: #2b1d16;
+                      "
+                    >
+                      <p
+                        style="
+                          margin: 0 0 10px;
+                          font-size: 12px;
+                          letter-spacing: 4px;
+                          text-transform: uppercase;
+                          color: #a0182a;
+                          text-align: center;
+                        "
+                      >
+                        Bienvenue
+                      </p>
+                      <h1
+                        style="
+                          margin: 0 0 18px;
+                          font-size: 30px;
+                          line-height: 1.2;
+                          font-weight: normal;
+                          color: #173d2c;
+                          text-align: center;
+                        "
+                      >
+                        Bienvenue{{ if .Data.display_name }} {{ .Data.display_name }}{{ end }}&nbsp;!
+                      </h1>
+                      <p
+                        style="
+                          margin: 0 0 26px;
+                          font-size: 17px;
+                          line-height: 1.6;
+                          color: #4a3a30;
+                          text-align: center;
+                        "
+                      >
+                        Un Secret Santa vous attend sur
+                        <strong style="color: #173d2c">HoHoWho</strong>. Confirmez votre adresse
+                        e-mail d’un clic : pas de mot de passe, pas de compte à gérer.
+                      </p>
+                      <!-- Button -->
+                      <table
+                        role="presentation"
+                        cellpadding="0"
+                        cellspacing="0"
+                        border="0"
+                        align="center"
+                        style="margin: 0 auto"
+                      >
+                        <tr>
+                          <td
+                            align="center"
+                            bgcolor="#a0182a"
+                            style="
+                              border-radius: 4px;
+                              background-color: #a0182a;
+                              background-image: linear-gradient(
+                                180deg,
+                                #b8253a,
+                                #a0182a 55%,
+                                #7a1020
+                              );
+                              border: 1px solid #7a1020;
+                            "
+                          >
+                            <a
+                              href="{{ .ConfirmationURL }}"
+                              target="_blank"
+                              style="
+                                display: inline-block;
+                                padding: 16px 34px;
+                                font-family: Georgia, 'Times New Roman', serif;
+                                font-size: 15px;
+                                font-weight: bold;
+                                letter-spacing: 3px;
+                                text-transform: uppercase;
+                                color: #fffaf0;
+                                text-decoration: none;
+                                border: 1px solid #e6cd8e;
+                                border-radius: 3px;
+                              "
+                            >
+                              &#10022;&nbsp; Confirmer et entrer &nbsp;&#10022;
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      <p
+                        style="
+                          margin: 26px 0 0;
+                          font-size: 22px;
+                          line-height: 1;
+                          color: #c9a25a;
+                          text-align: center;
+                        "
+                      >
+                        &#8212;&#8202;&#10022;&#8202;&#8212;
+                      </p>
+                      <p
+                        style="
+                          margin: 18px 0 6px;
+                          font-size: 13px;
+                          line-height: 1.5;
+                          color: #6e5d50;
+                          text-align: center;
+                        "
+                      >
+                        Le lien fonctionne une seule fois, sur n’importe quel appareil, pendant une
+                        durée limitée. Si le bouton ne marche pas, copiez ce lien&nbsp;:
+                      </p>
+                      <p
+                        style="
+                          margin: 0 0 20px;
+                          font-size: 12px;
+                          line-height: 1.5;
+                          text-align: center;
+                          word-break: break-all;
+                        "
+                      >
+                        <a
+                          href="{{ .ConfirmationURL }}"
+                          style="color: #a0182a"
+                          >{{ .ConfirmationURL }}</a
+                        >
+                      </p>
+                      <p
+                        style="
+                          margin: 0;
+                          font-size: 13px;
+                          line-height: 1.5;
+                          color: #6e5d50;
+                          text-align: center;
+                          font-style: italic;
+                        "
+                      >
+                        Vous n’avez rien demandé&nbsp;? Ignorez simplement cet e-mail.
+                      </p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <!-- Footer -->
+            <tr>
+              <td
+                align="center"
+                style="
+                  padding: 22px 10px 0;
+                  font-family: Georgia, 'Times New Roman', serif;
+                  font-size: 13px;
+                  line-height: 1.6;
+                  color: #e6cd8e;
+                "
+              >
+                <span style="font-size: 20px; font-style: italic">HoHoWho</span><br />
+                <span style="color: #b8c7bd"
+                  >Le Secret Santa entre proches · gratuit et sans pub · ❄</span
+                >
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

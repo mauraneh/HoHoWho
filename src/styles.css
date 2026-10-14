@@ -46,22 +46,34 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Ivory paper with a faint damask pattern. */
+/*
+ * Night-time emerald wall with a faint gold damask; snow falls on top (app-snowfall) and the
+ * ivory "paper" cards sit in front of it.
+ */
 body {
-  background-color: var(--ivory);
+  color: var(--ivory);
+  background-color: var(--emerald-deep);
   background-image:
-    radial-gradient(circle at 50% 50%, rgb(201 162 90 / 9%) 0 2px, transparent 3px),
-    radial-gradient(circle at 0 0, rgb(201 162 90 / 6%) 0 1px, transparent 2px),
-    radial-gradient(ellipse at top, rgb(255 255 255 / 60%), transparent 60%);
+    radial-gradient(circle at 50% 50%, rgb(201 162 90 / 7%) 0 1.5px, transparent 2.5px),
+    radial-gradient(ellipse at 50% -10%, rgb(42 92 67 / 90%), transparent 60%),
+    radial-gradient(ellipse at 100% 100%, rgb(122 16 32 / 35%), transparent 50%),
+    linear-gradient(180deg, var(--emerald) 0%, var(--emerald-deep) 70%, #0a1f16 100%);
   background-size:
-    28px 28px,
-    14px 14px,
+    32px 32px,
+    100% 100%,
+    100% 100%,
     100% 100%;
+  background-attachment: fixed;
+  min-height: 100vh;
 }
 
 a {
-  color: var(--crimson);
+  color: var(--gold-light);
   text-underline-offset: 3px;
+}
+
+.card a {
+  color: var(--crimson);
 }
 
 h1,
@@ -71,6 +83,16 @@ h3 {
   font-weight: 700;
   line-height: 1.1;
   margin: 0 0 0.7rem;
+  color: var(--gold-light);
+}
+
+.card {
+  color: var(--ink);
+}
+
+.card h1,
+.card h2,
+.card h3 {
   color: var(--emerald);
 }
 
@@ -114,6 +136,10 @@ code {
   display: inline-block;
   font-size: 0.72rem;
   font-weight: 600;
+  color: var(--gold);
+}
+
+.card .eyebrow {
   color: var(--crimson);
 }
 
@@ -157,9 +183,17 @@ code {
     var(--shadow);
 }
 
+.card-night,
+.card-crimson {
+  --muted: rgb(247 240 225 / 75%);
+}
+
 .card-night h1,
 .card-night h2,
-.card-night h3 {
+.card-night h3,
+.card-crimson h1,
+.card-crimson h2,
+.card-crimson h3 {
   color: var(--ivory);
 }
 
@@ -167,7 +201,8 @@ code {
   color: rgb(247 240 225 / 75%);
 }
 
-.card-night .eyebrow {
+.card-night .eyebrow,
+.card-crimson .eyebrow {
   color: var(--gold-light);
 }
 
@@ -207,6 +242,10 @@ code {
 }
 
 .muted {
+  color: rgb(247 240 225 / 72%);
+}
+
+.card .muted {
   color: var(--muted);
 }
 
@@ -309,10 +348,14 @@ code {
   border: none;
   padding: 0;
   font: inherit;
-  color: var(--crimson);
+  color: var(--gold-light);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.card .link-btn {
+  color: var(--crimson);
 }
 
 :focus-visible {
@@ -411,6 +454,15 @@ fieldset {
   height: 1px;
 }
 
+.field .chip-toggle {
+  font-family: var(--font-text);
+  font-size: 0.9rem;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--ink);
+}
+
 .chip-toggle span {
   display: inline-block;
   padding: 0.35rem 0.85rem;
@@ -473,6 +525,7 @@ fieldset {
 }
 
 .alert {
+  color: var(--ink);
   border-radius: 4px;
   padding: 0.8rem 1rem;
   margin-bottom: 1rem;
@@ -523,6 +576,10 @@ fieldset {
   flex: none;
 }
 
+.card.empty {
+  color: var(--muted);
+}
+
 .empty {
   text-align: center;
   padding: 2.5rem 1rem;
@@ -535,13 +592,16 @@ fieldset {
   margin-bottom: 0.5rem;
 }
 
-/* Section tabs (event page) */
+/* Section tabs (event page): a paper strip with a gold rule. */
 .tabs {
   display: flex;
   gap: 0.25rem;
   overflow-x: auto;
   margin-bottom: 1.25rem;
-  border-bottom: 1px solid var(--gold);
+  padding: 0 0.5rem;
+  background: var(--paper);
+  border-radius: var(--radius);
+  box-shadow: var(--gold-rule), var(--shadow);
   scrollbar-width: none;
 }
 

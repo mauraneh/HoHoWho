@@ -1,20 +1,21 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HohowhoBackend } from '../../core/backend/hohowho-backend';
 import { errorMessage, formatBudget } from '../../core/format';
 import { EventStatus, EventSummary } from '../../core/models';
+import { AdventDoor } from '../../shared/advent-door';
 import { Divider } from '../../shared/ornaments';
 
-const PHASES: Record<EventStatus, { label: string; css: string }> = {
-  open: { label: 'Inscriptions & envies', css: 'badge-gold' },
-  exclusions: { label: 'Exclusions', css: 'badge-red' },
-  drawn: { label: 'Tirage effectué', css: 'badge-green' },
+const PHASES: Record<EventStatus, { label: string; icon: string }> = {
+  open: { label: 'Inscriptions & envies', icon: '✉️' },
+  exclusions: { label: 'Exclusions', icon: '🤫' },
+  drawn: { label: 'Tirage effectué', icon: '🎁' },
 };
 
 @Component({
   selector: 'app-event-list-page',
-  imports: [RouterLink, DatePipe, Divider],
+  imports: [RouterLink, DatePipe, Divider, AdventDoor],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="container">
@@ -30,31 +31,47 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
 
       @if (events(); as list) {
         <div class="calendar">
-          @for (event of list; track event.id) {
-            <a class="door card-crimson" [routerLink]="['/events', event.id]">
-              <span class="date">
-                @if (event.eventDate) {
-                  <span class="day">{{ event.eventDate | date: 'd' }}</span>
-                  <span class="month">{{ event.eventDate | date: 'MMM' }}</span>
-                } @else {
-                  <span class="day">✦</span>
-                }
-              </span>
-              <span class="knob" aria-hidden="true"></span>
-              <span class="door-body">
-                <span class="name">{{ event.name }}</span>
-                <span class="budget">{{ budget(event) }}</span>
-                <span class="row">
-                  <span class="badge" [class]="phase(event).css">{{ phase(event).label }}</span>
-                  @if (event.isOwner) {
-                    <span class="badge badge-gold">★ Organisateur</span>
-                  }
-                </span>
-              </span>
+          @for (event of list; track event.id; let i = $index) {
+            <a
+              class="slot"
+              [routerLink]="['/events', event.id]"
+              (click)="openDoor($event, event.id)"
+              [attr.aria-label]="'Ouvrir ' + event.name"
+            >
+              <app-advent-door
+                [open]="opening() === event.id"
+                [peek]="true"
+                [tone]="i % 3 === 1 ? 'emerald' : 'crimson'"
+              >
+                <div front class="door-front">
+                  <span class="date">
+                    @if (event.eventDate) {
+                      <span class="day">{{ event.eventDate | date: 'd' }}</span>
+                      <span class="month">{{ event.eventDate | date: 'MMM' }}</span>
+                    } @else {
+                      <span class="day">✦</span>
+                    }
+                  </span>
+                  <span class="door-body">
+                    <span class="name">{{ event.name }}</span>
+                    <span class="budget">{{ budget(event) }}</span>
+                    <span class="row">
+                      <span class="badge">{{ phase(event).label }}</span>
+                      @if (event.isOwner) {
+                        <span class="badge">★ Organisateur</span>
+                      }
+                    </span>
+                  </span>
+                </div>
+                <div inside class="door-inside">
+                  <span class="gift" aria-hidden="true">{{ phase(event).icon }}</span>
+                  <span class="caps">Entrer</span>
+                </div>
+              </app-advent-door>
             </a>
           }
           @if (canOrganize()) {
-            <a routerLink="/events/new" class="door new-door">
+            <a routerLink="/events/new" class="slot new-door">
               <span class="plus" aria-hidden="true">＋</span>
               <span class="caps">Nouveau Secret Santa</span>
             </a>
@@ -82,30 +99,27 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
     .page-title {
       font-size: 3.6rem;
       margin: 0;
-      color: var(--emerald);
+      color: var(--gold-light);
     }
     .calendar {
       display: grid;
-      gap: 1rem;
+      gap: 1.25rem;
       grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     }
-    .door {
-      position: relative;
-      display: flex;
-      flex-direction: column;
-      min-height: 220px;
-      padding: 1rem 1.2rem 1.2rem;
-      border-radius: 4px;
+    .slot {
+      display: block;
+      height: 230px;
       color: var(--ivory);
       text-decoration: none;
-      transition:
-        transform 0.18s ease,
-        box-shadow 0.18s ease;
-      transform-origin: left center;
+      border-radius: 4px;
     }
-    .door:hover {
-      transform: perspective(900px) rotateY(-6deg);
-      box-shadow: var(--shadow-lift);
+    app-advent-door {
+      height: 100%;
+    }
+    .door-front {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
     .date {
       display: flex;
@@ -115,7 +129,7 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
       color: var(--gold-light);
     }
     .day {
-      font-size: 2.1rem;
+      font-size: 2.3rem;
       font-weight: 700;
     }
     .month {
@@ -123,16 +137,6 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
       letter-spacing: 0.2em;
       text-transform: uppercase;
       margin-top: 0.2rem;
-    }
-    .knob {
-      position: absolute;
-      right: 1rem;
-      top: 50%;
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #f6e2a8, var(--gold) 60%, #8a6a2c);
-      box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
     }
     .door-body {
       margin-top: auto;
@@ -147,26 +151,45 @@ const PHASES: Record<EventStatus, { label: string; css: string }> = {
       line-height: 1.1;
       padding-right: 1.5rem;
     }
-    .door .badge {
-      background: rgb(247 240 225 / 14%);
-      color: var(--ivory);
-      box-shadow: inset 0 0 0 1px rgb(201 162 90 / 55%);
-    }
     .budget {
       font-size: 0.85rem;
       color: rgb(247 240 225 / 75%);
     }
-    .new-door {
+    .door-front .badge {
+      background: rgb(247 240 225 / 14%);
+      color: var(--ivory);
+      box-shadow: inset 0 0 0 1px rgb(201 162 90 / 55%);
+    }
+    .door-inside {
+      display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
-      color: var(--emerald);
+      height: 100%;
+      padding-left: 25%;
+      color: var(--gold-light);
+    }
+    .gift {
+      font-size: 3rem;
+      filter: drop-shadow(0 6px 10px rgb(0 0 0 / 50%));
+    }
+    .new-door {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--gold-light);
       border: 1.5px dashed var(--gold);
-      background: rgb(255 250 240 / 60%);
+      background: rgb(15 43 31 / 45%);
+      transition: background 0.2s ease;
+    }
+    .new-door:hover {
+      background: rgb(201 162 90 / 12%);
     }
     .plus {
-      font-size: 2.4rem;
-      color: var(--crimson);
+      font-size: 2.6rem;
       line-height: 1;
     }
     .new-door .caps {
@@ -183,6 +206,9 @@ export class EventListPage implements OnInit {
   protected readonly events = signal<EventSummary[] | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly canOrganize = signal(false);
+  /** Door currently swinging open before navigating to the event. */
+  protected readonly opening = signal<string | null>(null);
+  private readonly router = inject(Router);
 
   async ngOnInit(): Promise<void> {
     try {
@@ -196,6 +222,16 @@ export class EventListPage implements OnInit {
       this.error.set(errorMessage(e));
       this.events.set([]);
     }
+  }
+
+  /** Plays the door-opening animation, then enters the event. */
+  openDoor(event: MouseEvent, eventId: string): void {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    event.preventDefault();
+    if (this.opening()) return;
+    this.opening.set(eventId);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    setTimeout(() => void this.router.navigate(['/events', eventId]), reduced ? 0 : 750);
   }
 
   budget(event: EventSummary): string {
